@@ -1,12 +1,12 @@
 import Foundation
 import Combine
 
-enum SessionState {
-    case disconnected
-    case idle
-    case listening
-    case thinking
-    case speaking
+enum SessionState: String {
+    case disconnected = "Disconnected"
+    case idle = "Ready"
+    case listening = "Listening"
+    case thinking = "Thinking"
+    case speaking = "Speaking"
 }
 
 @MainActor
@@ -16,6 +16,7 @@ class SessionViewModel: ObservableObject {
     @Published var currentTranscription: String = ""
     @Published var isConnected: Bool = false
     @Published var errorMessage: String?
+    @Published var isProcessing: Bool = false
 
     @Published var config: ClaudeConfig {
         didSet { bridge = ClaudeBridge(config: config) }
@@ -33,14 +34,6 @@ class SessionViewModel: ObservableObject {
     let rayBanManager = RayBanManager()
     private var cancellables = Set<AnyCancellable>()
 
-    /// The currently active frame source
-    var currentFrameSource: any FrameSource {
-        switch activeFrameSource {
-        case .iPhone: return cameraManager
-        case .rayBan: return rayBanManager
-        }
-    }
-
     init(config: ClaudeConfig = ClaudeConfig()) {
         self.config = config
         self.bridge = ClaudeBridge(config: config)
@@ -48,12 +41,10 @@ class SessionViewModel: ObservableObject {
     }
 
     private func setupBindings() {
-        // Mirror speech transcription to our published property
         speechManager.$transcribedText
             .receive(on: RunLoop.main)
             .assign(to: &$currentTranscription)
 
-        // Handle speech pauses — this is where the magic happens
         speechManager.onSpeechPause = { [weak self] text in
             Task { @MainActor in
                 await self?.handleUserSpeech(text)
@@ -62,7 +53,6 @@ class SessionViewModel: ObservableObject {
 
         speechManager.setPauseThreshold(config.speechPauseThreshold)
 
-        // Handle audio interruptions
         NotificationCenter.default.publisher(for: .audioInterruptionBegan)
             .sink { [weak self] _ in
                 self?.speechManager.stopListening()
@@ -72,31 +62,32 @@ class SessionViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    // MARK: - Frame Source Switching
+    // MARK: - Frame Source
 
     private func switchFrameSource() {
-        // Stop current source
         cameraManager.stop()
         rayBanManager.stop()
+        startActiveFrameSource()
+    }
 
-        // Start new source
+    private func startActiveFrameSource() {
         do {
-            let source = currentFrameSource
-            source.configure(
-                frameInterval: config.videoFrameInterval,
-                jpegQuality: config.videoJPEGQuality
-            )
-            try source.start()
-            frameSourceStatus = .connected
+            switch activeFrameSource {
+            case .iPhone:
+                cameraManager.configure(frameInterval: config.videoFrameInterval, jpegQuality: config.videoJPEGQuality)
+                try cameraManager.start()
+                frameSourceStatus = .connected
+            case .rayBan:
+                rayBanManager.configure(frameInterval: config.videoFrameInterval, jpegQuality: config.videoJPEGQuality)
+                try rayBanManager.start()
+                // Status updated async by RayBanManager
+            }
             errorMessage = nil
         } catch {
             frameSourceStatus = .error(error.localizedDescription)
             errorMessage = error.localizedDescription
-
-            // Fall back to iPhone camera if Ray-Ban fails
             if activeFrameSource == .rayBan {
-                errorMessage = "\(error.localizedDescription)\nFalling back to iPhone camera."
-                activeFrameSource = .iPhone
+                // Don't auto-switch, let user see the error
             }
         }
     }
@@ -104,27 +95,18 @@ class SessionViewModel: ObservableObject {
     // MARK: - Connection
 
     func connect() async {
+        errorMessage = nil
         do {
             let health = try await bridge.checkHealth()
             if health.status == "ok" {
                 isConnected = true
                 state = .idle
-                errorMessage = nil
 
-                // Setup audio
                 try AudioSessionManager.shared.configureForVoiceChat()
-
-                // Start the active frame source
-                let source = currentFrameSource
-                source.configure(
-                    frameInterval: config.videoFrameInterval,
-                    jpegQuality: config.videoJPEGQuality
-                )
-                try source.start()
-                frameSourceStatus = .connected
+                startActiveFrameSource()
             }
         } catch {
-            errorMessage = "Cannot connect to gateway: \(error.localizedDescription)"
+            errorMessage = "Gateway: \(error.localizedDescription)"
             state = .disconnected
             isConnected = false
         }
@@ -140,7 +122,7 @@ class SessionViewModel: ObservableObject {
         isConnected = false
     }
 
-    // MARK: - Voice Interaction
+    // MARK: - Voice
 
     func toggleListening() {
         if speechManager.isListening {
@@ -152,7 +134,6 @@ class SessionViewModel: ObservableObject {
     }
 
     func startListening() {
-        // Interrupt TTS if speaking
         if speechManager.isSpeaking {
             speechManager.stopSpeaking()
         }
@@ -162,49 +143,64 @@ class SessionViewModel: ObservableObject {
             state = .listening
             errorMessage = nil
         } catch {
-            errorMessage = "Could not start listening: \(error.localizedDescription)"
+            errorMessage = "Mic: \(error.localizedDescription)"
         }
     }
 
-    // MARK: - Send to Claude
+    // MARK: - Send Message
+
+    func sendText(_ text: String) async {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        await handleUserSpeech(text.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
 
     private func handleUserSpeech(_ text: String) async {
-        // Add user message to transcript
+        guard !isProcessing else { return }
+        isProcessing = true
+
         transcript.append(TranscriptMessage(role: .user, text: text))
         currentTranscription = ""
         state = .thinking
+        errorMessage = nil
 
-        // Grab latest camera frame from active source
+        // Grab latest camera frame
         var images: [Data] = []
-        if let frame = currentFrameSource.consumeFrame() {
-            images.append(frame)
+        switch activeFrameSource {
+        case .iPhone:
+            if let frame = cameraManager.consumeFrame() {
+                images.append(frame)
+            }
+        case .rayBan:
+            if let frame = rayBanManager.consumeFrame() {
+                images.append(frame)
+            }
         }
 
         do {
+            print("[Session] Sending to gateway: \"\(text)\" with \(images.count) image(s)")
             let response = try await bridge.chat(text: text, images: images)
+            print("[Session] Got response: \"\(response.text.prefix(80))...\"")
 
-            // Add assistant response to transcript
             transcript.append(TranscriptMessage(
                 role: .assistant,
                 text: response.text,
                 toolCalls: response.tool_calls
             ))
 
-            // Speak the response
             state = .speaking
             speechManager.speak(response.text)
-
-            // When speech finishes, go back to listening
             observeSpeechCompletion()
 
         } catch {
-            errorMessage = "Error: \(error.localizedDescription)"
+            print("[Session] Error: \(error)")
+            errorMessage = error.localizedDescription
             state = .idle
         }
+
+        isProcessing = false
     }
 
     private func observeSpeechCompletion() {
-        // Watch for TTS completion, then auto-listen again
         speechManager.$isSpeaking
             .dropFirst()
             .filter { !$0 }
@@ -217,28 +213,9 @@ class SessionViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    // MARK: - Manual Text Input
-
-    func sendText(_ text: String) async {
-        guard !text.isEmpty else { return }
-        await handleUserSpeech(text)
-    }
-
     func resetConversation() async {
         transcript.removeAll()
         await bridge.resetConversation()
-    }
-}
-
-// MARK: - FrameSource configure extension
-
-@MainActor
-private extension FrameSource {
-    func configure(frameInterval: TimeInterval, jpegQuality: CGFloat) {
-        if let cam = self as? CameraManager {
-            cam.configure(frameInterval: frameInterval, jpegQuality: jpegQuality)
-        } else if let rb = self as? RayBanManager {
-            rb.configure(frameInterval: frameInterval, jpegQuality: jpegQuality)
-        }
+        errorMessage = nil
     }
 }

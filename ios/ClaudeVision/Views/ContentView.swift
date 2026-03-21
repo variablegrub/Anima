@@ -4,164 +4,91 @@ import AVFoundation
 struct ContentView: View {
     @StateObject private var viewModel = SessionViewModel()
     @State private var showSettings = false
-    @State private var showTranscript = true
     @State private var textInput = ""
     @State private var hasRequestedPermissions = false
 
     var body: some View {
         ZStack {
-            // Camera preview background
+            // Camera preview
             CameraPreviewView(session: viewModel.cameraManager.captureSession)
                 .ignoresSafeArea()
 
-            // Dark overlay for readability
-            Color.black.opacity(0.3)
+            Color.black.opacity(0.4)
                 .ignoresSafeArea()
 
-            VStack {
-                // Top bar
-                HStack {
-                    // Connection + source status
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(viewModel.isConnected ? .green : .red)
-                            .frame(width: 10, height: 10)
-                        Text(viewModel.isConnected ? "Gateway OK" : "No Gateway")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                        Text("•")
-                            .foregroundColor(.gray)
-                        Image(systemName: viewModel.activeFrameSource.icon)
-                            .font(.caption)
-                            .foregroundColor(frameSourceColor)
-                        Text(viewModel.frameSourceStatus.label)
-                            .font(.caption)
-                            .foregroundColor(.white)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
-                    .cornerRadius(20)
-
-                    Spacer()
-
-                    // State indicator
-                    stateIndicator
-
-                    Spacer()
-
-                    // Settings button
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gear")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                            .padding(10)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                    }
-                }
-                .padding()
+            VStack(spacing: 0) {
+                // ── Top Status Bar ──
+                topBar
+                    .padding(.horizontal)
+                    .padding(.top, 8)
 
                 Spacer()
 
-                // Transcript
-                if showTranscript {
+                // ── Transcript ──
+                if !viewModel.transcript.isEmpty {
                     TranscriptView(messages: viewModel.transcript)
-                        .frame(maxHeight: 300)
+                        .frame(maxHeight: UIScreen.main.bounds.height * 0.35)
                         .padding(.horizontal)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
 
-                // Current transcription (live STT)
+                // ── Live Transcription ──
                 if !viewModel.currentTranscription.isEmpty {
-                    Text(viewModel.currentTranscription)
-                        .font(.body)
-                        .foregroundColor(.white.opacity(0.8))
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(12)
-                        .padding(.horizontal)
+                    HStack {
+                        Image(systemName: "waveform")
+                            .foregroundColor(.orange)
+                            .font(.caption)
+                        Text(viewModel.currentTranscription)
+                            .font(.callout)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(20)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                 }
 
-                // Error message
+                // ── Error ──
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.red.opacity(0.8))
+                        .cornerRadius(8)
                         .padding(.horizontal)
-                        .multilineTextAlignment(.center)
+                        .padding(.top, 4)
+                        .onTapGesture { viewModel.errorMessage = nil }
                 }
 
-                // Text input fallback
-                HStack {
+                // ── Text Input ──
+                HStack(spacing: 8) {
                     TextField("Type a message...", text: $textInput)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit {
-                            let text = textInput
-                            textInput = ""
-                            Task { await viewModel.sendText(text) }
-                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color.white.opacity(0.15))
+                        .cornerRadius(22)
+                        .foregroundColor(.white)
+                        .onSubmit { sendTextInput() }
 
-                    Button {
-                        let text = textInput
-                        textInput = ""
-                        Task { await viewModel.sendText(text) }
-                    } label: {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.title2)
+                    if !textInput.isEmpty {
+                        Button(action: sendTextInput) {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.orange)
+                        }
                     }
-                    .disabled(textInput.isEmpty)
                 }
                 .padding(.horizontal)
+                .padding(.top, 8)
 
-                // Bottom controls
-                HStack(spacing: 30) {
-                    // Transcript toggle
-                    Button {
-                        showTranscript.toggle()
-                    } label: {
-                        Image(systemName: showTranscript ? "text.bubble.fill" : "text.bubble")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                    }
-
-                    // Main mic button
-                    Button {
-                        if viewModel.isConnected {
-                            viewModel.toggleListening()
-                        } else {
-                            Task { await viewModel.connect() }
-                        }
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(micButtonColor)
-                                .frame(width: 72, height: 72)
-                                .shadow(color: micButtonColor.opacity(0.5), radius: 10)
-
-                            Image(systemName: micButtonIcon)
-                                .font(.title)
-                                .foregroundColor(.white)
-                        }
-                    }
-
-                    // Frame source toggle (iPhone ↔ Ray-Ban)
-                    Button {
-                        viewModel.activeFrameSource = viewModel.activeFrameSource == .iPhone ? .rayBan : .iPhone
-                    } label: {
-                        VStack(spacing: 2) {
-                            Image(systemName: viewModel.activeFrameSource.icon)
-                                .font(.title2)
-                                .foregroundColor(frameSourceColor)
-                            Text(viewModel.activeFrameSource == .iPhone ? "iPhone" : "Ray-Ban")
-                                .font(.system(size: 8))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                    }
-                }
-                .padding(.bottom, 30)
+                // ── Bottom Controls ──
+                bottomControls
+                    .padding(.top, 12)
+                    .padding(.bottom, 20)
             }
         }
         .sheet(isPresented: $showSettings) {
@@ -175,6 +102,8 @@ struct ContentView: View {
                 Task { await viewModel.connect() }
             }
         }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.transcript.count)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.state)
         .task {
             guard !hasRequestedPermissions else { return }
             hasRequestedPermissions = true
@@ -185,29 +114,149 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - UI Helpers
+    // MARK: - Send
 
-    private var stateIndicator: some View {
-        Group {
-            switch viewModel.state {
-            case .disconnected:
-                Label("Disconnected", systemImage: "wifi.slash")
-            case .idle:
-                Label("Ready", systemImage: "checkmark.circle")
-            case .listening:
-                Label("Listening...", systemImage: "waveform")
-            case .thinking:
-                Label("Thinking...", systemImage: "brain")
-            case .speaking:
-                Label("Speaking...", systemImage: "speaker.wave.2")
+    private func sendTextInput() {
+        let text = textInput
+        textInput = ""
+        Task { await viewModel.sendText(text) }
+    }
+
+    // MARK: - Top Bar
+
+    private var topBar: some View {
+        HStack(spacing: 8) {
+            // Status pill
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(viewModel.isConnected ? .green : .red)
+                    .frame(width: 7, height: 7)
+                Image(systemName: viewModel.activeFrameSource.icon)
+                    .font(.system(size: 10))
+                    .foregroundColor(frameSourceColor)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial)
+            .cornerRadius(14)
+
+            // State pill
+            HStack(spacing: 4) {
+                stateIcon
+                    .font(.system(size: 10))
+                    .foregroundColor(stateColor)
+                Text(viewModel.state.rawValue)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(.ultraThinMaterial)
+            .cornerRadius(14)
+
+            if viewModel.isProcessing {
+                ProgressView()
+                    .tint(.orange)
+                    .scaleEffect(0.7)
+            }
+
+            Spacer()
+
+            // Settings
+            Button { showSettings = true } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(8)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
             }
         }
-        .font(.caption)
-        .foregroundColor(.white)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(.ultraThinMaterial)
-        .cornerRadius(20)
+    }
+
+    // MARK: - Bottom Controls
+
+    private var bottomControls: some View {
+        HStack(spacing: 0) {
+            // Reset
+            Button {
+                Task { await viewModel.resetConversation() }
+            } label: {
+                VStack(spacing: 3) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 18))
+                    Text("Reset")
+                        .font(.system(size: 9))
+                }
+                .foregroundColor(.white.opacity(0.7))
+                .frame(maxWidth: .infinity)
+            }
+
+            // Mic button
+            Button {
+                if viewModel.isConnected {
+                    viewModel.toggleListening()
+                } else {
+                    Task { await viewModel.connect() }
+                }
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(micButtonColor)
+                        .frame(width: 68, height: 68)
+                        .shadow(color: micButtonColor.opacity(0.4), radius: 8)
+
+                    if viewModel.isProcessing {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: micButtonIcon)
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            // Source toggle
+            Button {
+                viewModel.activeFrameSource = viewModel.activeFrameSource == .iPhone ? .rayBan : .iPhone
+            } label: {
+                VStack(spacing: 3) {
+                    Image(systemName: viewModel.activeFrameSource.icon)
+                        .font(.system(size: 18))
+                        .foregroundColor(frameSourceColor)
+                    Text(viewModel.activeFrameSource == .iPhone ? "iPhone" : "Glasses")
+                        .font(.system(size: 9))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Helpers
+
+    @ViewBuilder
+    private var stateIcon: some View {
+        switch viewModel.state {
+        case .disconnected: Image(systemName: "wifi.slash")
+        case .idle: Image(systemName: "checkmark")
+        case .listening: Image(systemName: "waveform")
+        case .thinking: Image(systemName: "brain")
+        case .speaking: Image(systemName: "speaker.wave.2")
+        }
+    }
+
+    private var stateColor: Color {
+        switch viewModel.state {
+        case .disconnected: return .red
+        case .idle: return .green
+        case .listening: return .orange
+        case .thinking: return .yellow
+        case .speaking: return .blue
+        }
     }
 
     private var micButtonColor: Color {
@@ -215,7 +264,7 @@ struct ContentView: View {
         case .listening: return .red
         case .thinking: return .orange
         case .speaking: return .blue
-        default: return viewModel.isConnected ? .green : .gray
+        default: return viewModel.isConnected ? Color(red: 1.0, green: 0.58, blue: 0.0) : .gray
         }
     }
 
@@ -234,7 +283,7 @@ struct ContentView: View {
         case .connected: return .green
         case .connecting: return .yellow
         case .error: return .red
-        default: return .white
+        default: return .white.opacity(0.6)
         }
     }
 }

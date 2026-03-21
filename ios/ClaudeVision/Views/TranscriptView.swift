@@ -5,24 +5,25 @@ struct TranscriptView: View {
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
+            ScrollView(.vertical, showsIndicators: false) {
+                LazyVStack(spacing: 8) {
                     ForEach(messages) { message in
                         MessageBubble(message: message)
                             .id(message.id)
                     }
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 4)
             }
             .onChange(of: messages.count) { _, _ in
                 if let last = messages.last {
-                    withAnimation {
+                    withAnimation(.easeOut(duration: 0.3)) {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
             }
         }
-        .background(.ultraThinMaterial)
+        .background(.black.opacity(0.3))
         .cornerRadius(16)
     }
 }
@@ -30,47 +31,73 @@ struct TranscriptView: View {
 struct MessageBubble: View {
     let message: TranscriptMessage
 
+    private var isUser: Bool { message.role == .user }
+
     var body: some View {
-        HStack {
-            if message.role == .user { Spacer(minLength: 40) }
+        HStack(alignment: .bottom, spacing: 6) {
+            if isUser { Spacer(minLength: 60) }
 
-            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
+                // Role label
+                Text(isUser ? "You" : "Claude")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(isUser ? .blue : .orange)
+                    .textCase(.uppercase)
+
+                // Message text
                 Text(message.text)
-                    .font(.body)
+                    .font(.system(size: 14))
                     .foregroundColor(.white)
-                    .multilineTextAlignment(message.role == .user ? .trailing : .leading)
+                    .multilineTextAlignment(isUser ? .trailing : .leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                // Show tool call badges
+                // Tool call badges
                 if !message.toolCalls.isEmpty {
                     HStack(spacing: 4) {
-                        ForEach(message.toolCalls.prefix(3), id: \.name) { tool in
+                        Image(systemName: "wrench.and.screwdriver")
+                            .font(.system(size: 8))
+                            .foregroundColor(.purple)
+                        ForEach(message.toolCalls.prefix(2), id: \.name) { tool in
                             Text(tool.name)
-                                .font(.caption2)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.purple.opacity(0.3))
-                                .cornerRadius(4)
+                                .font(.system(size: 9))
                                 .foregroundColor(.purple)
                         }
-                        if message.toolCalls.count > 3 {
-                            Text("+\(message.toolCalls.count - 3)")
-                                .font(.caption2)
+                        if message.toolCalls.count > 2 {
+                            Text("+\(message.toolCalls.count - 2)")
+                                .font(.system(size: 9))
                                 .foregroundColor(.gray)
                         }
                     }
                 }
-
-                Text(message.timestamp, style: .time)
-                    .font(.caption2)
-                    .foregroundColor(.gray)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(message.role == .user ? Color.blue.opacity(0.3) : Color.gray.opacity(0.2))
-            .cornerRadius(16)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(isUser ? Color.blue.opacity(0.25) : Color.white.opacity(0.1))
+            .cornerRadius(16, corners: isUser ? [.topLeft, .topRight, .bottomLeft] : [.topLeft, .topRight, .bottomRight])
 
-            if message.role == .assistant { Spacer(minLength: 40) }
+            if !isUser { Spacer(minLength: 60) }
         }
         .padding(.horizontal, 8)
+    }
+}
+
+// Rounded corner helper
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCornerShape(radius: radius, corners: corners))
+    }
+}
+
+struct RoundedCornerShape: Shape {
+    var radius: CGFloat
+    var corners: UIRectCorner
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(path.cgPath)
     }
 }
