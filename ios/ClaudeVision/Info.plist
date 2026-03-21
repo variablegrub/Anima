@@ -14,5 +14,15 @@
 	<array>
 		<string>_http._tcp</string>
 	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>ClaudeVision uses Bluetooth to connect to Meta Ray-Ban Smart Glasses.</string>
+	<key>MWDAT</key>
+	<dict>
+		<key>Analytics</key>
+		<dict>
+			<key>OptOut</key>
+			<true/>
+		</dict>
+	</dict>
 </dict>
 </plist>

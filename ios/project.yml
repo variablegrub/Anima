@@ -5,12 +5,22 @@ options:
     iOS: "17.0"
   xcodeVersion: "26.0"
 
+packages:
+  meta-wearables-dat-ios:
+    url: https://github.com/facebook/meta-wearables-dat-ios
+    from: "0.5.0"
+
 targets:
   ClaudeVision:
     type: application
     platform: iOS
     sources:
       - ClaudeVision
+    dependencies:
+      - package: meta-wearables-dat-ios
+        product: MWDATCore
+      - package: meta-wearables-dat-ios
+        product: MWDATCamera
     settings:
       base:
         INFOPLIST_FILE: ClaudeVision/Info.plist

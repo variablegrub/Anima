@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B0D43D05DD7AA9061DBBC52 /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = 56D471E4C1D0316E974B9E9D /* MWDATCore */; };
 		1A238EAD9D1126CF37177585 /* ClaudeConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730CD29BE25A17AA11DBD6B /* ClaudeConfig.swift */; };
 		25A8B74F9507C6E8039685DE /* SessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57FAB5518FCC84C79B8DCA9A /* SessionViewModel.swift */; };
+		26DF4D6AB4300A244E2F9993 /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = F89EE55D2F5EFD824C5EAAA1 /* MWDATCamera */; };
 		2F08588A0FA5377BED01C1DB /* FrameSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 704D8A46187AD105F8BE0E3F /* FrameSource.swift */; };
 		3FDF7F0AAA360B8773806769 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6CC34BA60D99796648D08667 /* Preview Assets.xcassets */; };
 		513C996089182BCDA9EC21E6 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6399D29511D56878F01F5204 /* CameraManager.swift */; };
@@ -43,6 +45,18 @@
 		ED8607622DE3C3A56C5185B5 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
 		F0160BE25F91F5DE8B717653 /* RayBanManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RayBanManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D6A8C524AC7E81672D6C6835 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B0D43D05DD7AA9061DBBC52 /* MWDATCore in Frameworks */,
+				26DF4D6AB4300A244E2F9993 /* MWDATCamera in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		0874139E64E32E93EA1F8905 /* Models */ = {
@@ -133,6 +147,7 @@
 			buildPhases = (
 				6FBE7C83F638E053828BBF68 /* Sources */,
 				5D924432B9626EA5F32286BC /* Resources */,
+				D6A8C524AC7E81672D6C6835 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -140,6 +155,8 @@
 			);
 			name = ClaudeVision;
 			packageProductDependencies = (
+				56D471E4C1D0316E974B9E9D /* MWDATCore */,
+				F89EE55D2F5EFD824C5EAAA1 /* MWDATCamera */,
 			);
 			productName = ClaudeVision;
 			productReference = 98E55A0878E3210165D23655 /* ClaudeVision.app */;
@@ -168,6 +185,9 @@
 			);
 			mainGroup = 1AC8D3445CECE9610F600843;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				361638BCA9B14020698AECCB /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A89D041F911DC9E0739EB6C0 /* Products */;
 			projectDirPath = "";
@@ -395,6 +415,30 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		361638BCA9B14020698AECCB /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/meta-wearables-dat-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.5.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		56D471E4C1D0316E974B9E9D /* MWDATCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 361638BCA9B14020698AECCB /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCore;
+		};
+		F89EE55D2F5EFD824C5EAAA1 /* MWDATCamera */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 361638BCA9B14020698AECCB /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCamera;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = ED22C830246B55416593B99A /* Project object */;
 }

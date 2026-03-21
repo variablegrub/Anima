@@ -92,11 +92,9 @@ struct SettingsView: View {
                             .foregroundColor(.orange)
                         Text(rayBanManager.glassesName)
                         Spacer()
-                        if let battery = rayBanManager.batteryLevel {
-                            Text("\(battery)%")
-                                .foregroundColor(.secondary)
-                            Image(systemName: batteryIcon(battery))
-                                .foregroundColor(battery > 20 ? .green : .red)
+                        if rayBanManager.hasActiveDevice {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
                         }
                     }
 
@@ -177,15 +175,6 @@ struct SettingsView: View {
         }
     }
 
-    private func batteryIcon(_ level: Int) -> String {
-        switch level {
-        case 76...100: return "battery.100"
-        case 51...75: return "battery.75"
-        case 26...50: return "battery.50"
-        case 1...25: return "battery.25"
-        default: return "battery.0"
-        }
-    }
 }
 
 // MARK: - Ray-Ban Setup Instructions Sheet
