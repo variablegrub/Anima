@@ -91,8 +91,10 @@ show_logo() {
     echo -e "${DIM}            ${CYAN}github.com/mrdulasolutions${RESET}"
     echo ""
     echo -e "${DIM}        This project is not affiliated with, endorsed${RESET}"
-    echo -e "${DIM}        by, or officially connected to Anthropic, PBC.${RESET}"
-    echo -e "${DIM}        Claude is a trademark of Anthropic.${RESET}"
+    echo -e "${DIM}        by, or officially connected to Anthropic, PBC${RESET}"
+    echo -e "${DIM}        or Meta Platforms, Inc. Claude is a trademark${RESET}"
+    echo -e "${DIM}        of Anthropic. Meta and Ray-Ban are trademarks${RESET}"
+    echo -e "${DIM}        of Meta Platforms, Inc.${RESET}"
     echo ""
 }
 
@@ -500,7 +502,7 @@ show_summary() {
     echo ""
     echo -e "  ${GRAY}─────────────────────────────────────────────────────────${RESET}"
     echo -e "  ${DIM}  Built by ${LIGHT_ORANGE}@mrdulasolutions${RESET}  ${DIM}•${RESET}  ${DIM}${CYAN}github.com/mrdulasolutions${RESET}"
-    echo -e "  ${DIM}  Not affiliated with or endorsed by Anthropic, PBC.${RESET}"
+    echo -e "  ${DIM}  Not affiliated with or endorsed by Anthropic or Meta.${RESET}"
     echo -e "  ${GRAY}─────────────────────────────────────────────────────────${RESET}"
     echo ""
 }

@@ -203,7 +203,7 @@ MIT
 
 ## Disclaimer
 
-This project is not affiliated with, endorsed by, or officially connected to Anthropic, PBC. Claude is a trademark of Anthropic.
+This project is not affiliated with, endorsed by, or officially connected to Anthropic, PBC or Meta Platforms, Inc. Claude is a trademark of Anthropic. Meta, Ray-Ban, and the Meta Wearables Device Access Toolkit are trademarks of Meta Platforms, Inc.
 
 ---
 
