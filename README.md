@@ -154,7 +154,10 @@ cd ios
 xcodegen generate
 open ClaudeVision.xcodeproj
 # Set your Development Team in Signing & Capabilities
-# Build and run on your iPhone (⌘R)
+# Connect your iPhone via USB (Simulators won't work — no camera/mic)
+# Select your iPhone in the device dropdown (top toolbar, next to ▶)
+# Press ⌘R to build and run
+# If "Untrusted Developer": iPhone Settings → General → VPN & Device Management → Trust
 ```
 
 ## MCP Tools
