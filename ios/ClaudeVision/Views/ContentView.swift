@@ -9,9 +9,33 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Camera preview
-            CameraPreviewView(session: viewModel.cameraManager.captureSession)
-                .ignoresSafeArea()
+            // Camera preview — switches based on active source
+            if viewModel.activeFrameSource == .iPhone {
+                CameraPreviewView(session: viewModel.cameraManager.captureSession)
+                    .ignoresSafeArea()
+            } else {
+                // Ray-Ban: show latest frame as image
+                if let image = viewModel.rayBanManager.latestFrame,
+                   let uiImage = UIImage(data: image) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .ignoresSafeArea()
+                } else {
+                    // No frame yet from glasses
+                    ZStack {
+                        Color.black.ignoresSafeArea()
+                        VStack(spacing: 12) {
+                            Image(systemName: "eyeglasses")
+                                .font(.system(size: 48))
+                                .foregroundColor(.orange.opacity(0.5))
+                            Text("Waiting for glasses feed...")
+                                .font(.callout)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                    }
+                }
+            }
 
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
@@ -134,6 +158,11 @@ struct ContentView: View {
                 Image(systemName: viewModel.activeFrameSource.icon)
                     .font(.system(size: 10))
                     .foregroundColor(frameSourceColor)
+                if viewModel.cameraManager.frameCount > 0 || viewModel.activeFrameSource == .iPhone {
+                    Text("\(viewModel.cameraManager.frameCount)f")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.5))
+                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)

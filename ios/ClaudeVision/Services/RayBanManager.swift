@@ -196,8 +196,13 @@ class RayBanManager: NSObject, ObservableObject, FrameSource {
     }
 
     func consumeFrame() -> Data? {
+        // Keep the frame available for preview — don't nil it
         let frame = latestFrame
-        latestFrame = nil
+        if frame != nil {
+            print("[RayBan] Consuming frame (\(frame!.count) bytes)")
+        } else {
+            print("[RayBan] No frame available to consume")
+        }
         return frame
     }
 

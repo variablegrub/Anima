@@ -4,8 +4,10 @@ import UIKit
 
 class CameraManager: NSObject, ObservableObject, FrameSource {
     @Published var latestFrame: Data?
+    @Published var latestImage: UIImage?
     @Published private(set) var isRunning: Bool = false
     @Published private(set) var connectionStatus: FrameSourceStatus = .disconnected
+    @Published var frameCount: Int = 0
 
     let sourceType: FrameSourceType = .iPhone
 
@@ -15,6 +17,7 @@ class CameraManager: NSObject, ObservableObject, FrameSource {
     private var lastCaptureTime: Date = .distantPast
     private var frameInterval: TimeInterval = 1.0
     private var jpegQuality: CGFloat = 0.5
+    private var isConfigured = false
 
     func configure(frameInterval: TimeInterval = 1.0, jpegQuality: CGFloat = 0.5) {
         self.frameInterval = frameInterval
@@ -24,28 +27,38 @@ class CameraManager: NSObject, ObservableObject, FrameSource {
     func start() throws {
         guard !isRunning else { return }
 
-        captureSession.beginConfiguration()
-        captureSession.sessionPreset = .medium
+        if !isConfigured {
+            captureSession.beginConfiguration()
+            captureSession.sessionPreset = .medium
 
-        // Add camera input
-        guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let input = try? AVCaptureDeviceInput(device: camera) else {
-            throw CameraError.noCameraAvailable
+            // Clear any existing inputs/outputs
+            for input in captureSession.inputs {
+                captureSession.removeInput(input)
+            }
+            for output in captureSession.outputs {
+                captureSession.removeOutput(output)
+            }
+
+            guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                  let input = try? AVCaptureDeviceInput(device: camera) else {
+                captureSession.commitConfiguration()
+                throw CameraError.noCameraAvailable
+            }
+
+            if captureSession.canAddInput(input) {
+                captureSession.addInput(input)
+            }
+
+            videoOutput.setSampleBufferDelegate(self, queue: processingQueue)
+            videoOutput.alwaysDiscardsLateVideoFrames = true
+
+            if captureSession.canAddOutput(videoOutput) {
+                captureSession.addOutput(videoOutput)
+            }
+
+            captureSession.commitConfiguration()
+            isConfigured = true
         }
-
-        if captureSession.canAddInput(input) {
-            captureSession.addInput(input)
-        }
-
-        // Add video output
-        videoOutput.setSampleBufferDelegate(self, queue: processingQueue)
-        videoOutput.alwaysDiscardsLateVideoFrames = true
-
-        if captureSession.canAddOutput(videoOutput) {
-            captureSession.addOutput(videoOutput)
-        }
-
-        captureSession.commitConfiguration()
 
         connectionStatus = .connecting
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -53,6 +66,7 @@ class CameraManager: NSObject, ObservableObject, FrameSource {
             DispatchQueue.main.async {
                 self?.isRunning = true
                 self?.connectionStatus = .connected
+                print("[Camera] Started — capturing frames every \(self?.frameInterval ?? 1)s")
             }
         }
     }
@@ -62,12 +76,17 @@ class CameraManager: NSObject, ObservableObject, FrameSource {
         captureSession.stopRunning()
         isRunning = false
         connectionStatus = .disconnected
-        latestFrame = nil
     }
 
     func consumeFrame() -> Data? {
+        // Return latest frame but DON'T nil it — keep it available
+        // until a new frame replaces it
         let frame = latestFrame
-        latestFrame = nil
+        if frame != nil {
+            print("[Camera] Consuming frame (\(frame!.count) bytes)")
+        } else {
+            print("[Camera] No frame available to consume")
+        }
         return frame
     }
 }
@@ -89,6 +108,8 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
 
         DispatchQueue.main.async { [weak self] in
             self?.latestFrame = jpegData
+            self?.latestImage = uiImage
+            self?.frameCount += 1
         }
     }
 }
