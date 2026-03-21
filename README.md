@@ -160,6 +160,28 @@ open ClaudeVision.xcodeproj
 # If "Untrusted Developer": iPhone Settings → General → VPN & Device Management → Trust
 ```
 
+## Meta Ray-Ban Glasses
+
+ClaudeVision supports Meta Ray-Ban Smart Glasses as an alternative camera source. Instead of your iPhone camera, Claude sees through your glasses — fully hands-free.
+
+### Setup
+
+1. Install the **Meta View** app on your iPhone
+2. Pair your glasses via Bluetooth
+3. Enable **Developer Mode**: Meta View → Settings → your glasses → Developer Mode → ON
+4. Restart your glasses (hold button 15s to power off, press to power on)
+5. In ClaudeVision, tap the **eyeglasses icon** or go to Settings → Camera Source → Meta Ray-Ban
+
+### Developer Access
+
+The Meta Device Access Toolkit (DAT) SDK is required for camera frame access from the glasses. The `RayBanManager.swift` is pre-wired with all integration points — just add the SDK framework:
+
+1. Apply for DAT SDK access at [developers.meta.com](https://developers.meta.com)
+2. Download and add the framework to the Xcode project
+3. Uncomment the DAT SDK imports and delegate methods in `RayBanManager.swift`
+
+The app includes a built-in setup guide (Settings → Meta Ray-Ban → Setup Instructions) that walks users through the pairing and developer mode process.
+
 ## MCP Tools
 
 ClaudeVision automatically discovers tools from your Claude Desktop configuration at:

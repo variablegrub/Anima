@@ -5,6 +5,9 @@ import UIKit
 class CameraManager: NSObject, ObservableObject, FrameSource {
     @Published var latestFrame: Data?
     @Published private(set) var isRunning: Bool = false
+    @Published private(set) var connectionStatus: FrameSourceStatus = .disconnected
+
+    let sourceType: FrameSourceType = .iPhone
 
     let captureSession = AVCaptureSession()
     private let videoOutput = AVCaptureVideoDataOutput()
@@ -44,10 +47,12 @@ class CameraManager: NSObject, ObservableObject, FrameSource {
 
         captureSession.commitConfiguration()
 
+        connectionStatus = .connecting
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             self?.captureSession.startRunning()
             DispatchQueue.main.async {
                 self?.isRunning = true
+                self?.connectionStatus = .connected
             }
         }
     }
@@ -56,6 +61,7 @@ class CameraManager: NSObject, ObservableObject, FrameSource {
         guard isRunning else { return }
         captureSession.stopRunning()
         isRunning = false
+        connectionStatus = .disconnected
         latestFrame = nil
     }
 

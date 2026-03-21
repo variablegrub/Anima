@@ -408,6 +408,37 @@ build_ios() {
     echo -e "     ${DIM}(tap \"Allow\" for each — all are required)${RESET}"
     echo ""
 
+    # Ray-Ban setup
+    if prompt_confirm "Do you have Meta Ray-Ban Smart Glasses?"; then
+        echo ""
+        echo -e "  ${ORANGE}╔═══════════════════════════════════════════════════════╗${RESET}"
+        echo -e "  ${ORANGE}║${RESET}  ${WHITE}Meta Ray-Ban — Developer Mode Setup${RESET}               ${ORANGE}║${RESET}"
+        echo -e "  ${ORANGE}╚═══════════════════════════════════════════════════════╝${RESET}"
+        echo ""
+        echo -e "  ${WHITE}Prerequisites:${RESET}"
+        echo -e "     ${DIM}• Meta Ray-Ban Smart Glasses (any model)${RESET}"
+        echo -e "     ${DIM}• Meta View app on your iPhone${RESET}"
+        echo -e "     ${DIM}• Meta Developer Account${RESET}"
+        echo -e "       ${CYAN}https://developers.meta.com${RESET}"
+        echo ""
+        echo -e "  ${WHITE}Step 1:${RESET} Open the ${LIGHT_ORANGE}Meta View${RESET} app on your iPhone"
+        echo -e "  ${WHITE}Step 2:${RESET} Sign in with your Meta account"
+        echo -e "  ${WHITE}Step 3:${RESET} Pair your glasses via Bluetooth (if not already)"
+        echo -e "  ${WHITE}Step 4:${RESET} Go to ${LIGHT_ORANGE}Settings → your glasses → Developer Mode${RESET}"
+        echo -e "  ${WHITE}Step 5:${RESET} Toggle ${LIGHT_ORANGE}Developer Mode ON${RESET}"
+        echo -e "  ${WHITE}Step 6:${RESET} Restart your glasses:"
+        echo -e "         ${DIM}• Hold the button for 15 seconds to power off${RESET}"
+        echo -e "         ${DIM}• Press the button to power back on${RESET}"
+        echo -e "  ${WHITE}Step 7:${RESET} In ClaudeVision app, tap the ${LIGHT_ORANGE}eyeglasses icon${RESET}"
+        echo -e "         ${DIM}or go to Settings → Camera Source → Meta Ray-Ban${RESET}"
+        echo ""
+        echo -e "  ${YELLOW}⚠${RESET}  ${DIM}The Meta DAT SDK is required for camera frame access.${RESET}"
+        echo -e "     ${DIM}Apply at: ${CYAN}https://developers.meta.com${RESET}"
+        echo -e "     ${DIM}Once approved, add the framework to the Xcode project.${RESET}"
+        echo -e "     ${DIM}The RayBanManager.swift is pre-wired with integration points.${RESET}"
+        echo ""
+    fi
+
     cd "$SCRIPT_DIR"
 }
 

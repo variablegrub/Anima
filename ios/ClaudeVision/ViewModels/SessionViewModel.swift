@@ -21,10 +21,25 @@ class SessionViewModel: ObservableObject {
         didSet { bridge = ClaudeBridge(config: config) }
     }
 
+    // Frame sources
+    @Published var activeFrameSource: FrameSourceType = .iPhone {
+        didSet { switchFrameSource() }
+    }
+    @Published var frameSourceStatus: FrameSourceStatus = .disconnected
+
     private var bridge: ClaudeBridge
     let speechManager = SpeechManager()
     let cameraManager = CameraManager()
+    let rayBanManager = RayBanManager()
     private var cancellables = Set<AnyCancellable>()
+
+    /// The currently active frame source
+    var currentFrameSource: any FrameSource {
+        switch activeFrameSource {
+        case .iPhone: return cameraManager
+        case .rayBan: return rayBanManager
+        }
+    }
 
     init(config: ClaudeConfig = ClaudeConfig()) {
         self.config = config
@@ -57,6 +72,35 @@ class SessionViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    // MARK: - Frame Source Switching
+
+    private func switchFrameSource() {
+        // Stop current source
+        cameraManager.stop()
+        rayBanManager.stop()
+
+        // Start new source
+        do {
+            let source = currentFrameSource
+            source.configure(
+                frameInterval: config.videoFrameInterval,
+                jpegQuality: config.videoJPEGQuality
+            )
+            try source.start()
+            frameSourceStatus = .connected
+            errorMessage = nil
+        } catch {
+            frameSourceStatus = .error(error.localizedDescription)
+            errorMessage = error.localizedDescription
+
+            // Fall back to iPhone camera if Ray-Ban fails
+            if activeFrameSource == .rayBan {
+                errorMessage = "\(error.localizedDescription)\nFalling back to iPhone camera."
+                activeFrameSource = .iPhone
+            }
+        }
+    }
+
     // MARK: - Connection
 
     func connect() async {
@@ -67,13 +111,17 @@ class SessionViewModel: ObservableObject {
                 state = .idle
                 errorMessage = nil
 
-                // Setup audio and camera
+                // Setup audio
                 try AudioSessionManager.shared.configureForVoiceChat()
-                cameraManager.configure(
+
+                // Start the active frame source
+                let source = currentFrameSource
+                source.configure(
                     frameInterval: config.videoFrameInterval,
                     jpegQuality: config.videoJPEGQuality
                 )
-                try cameraManager.start()
+                try source.start()
+                frameSourceStatus = .connected
             }
         } catch {
             errorMessage = "Cannot connect to gateway: \(error.localizedDescription)"
@@ -86,6 +134,8 @@ class SessionViewModel: ObservableObject {
         speechManager.stopListening()
         speechManager.stopSpeaking()
         cameraManager.stop()
+        rayBanManager.stop()
+        frameSourceStatus = .disconnected
         state = .disconnected
         isConnected = false
     }
@@ -124,9 +174,9 @@ class SessionViewModel: ObservableObject {
         currentTranscription = ""
         state = .thinking
 
-        // Grab latest camera frame
+        // Grab latest camera frame from active source
         var images: [Data] = []
-        if let frame = cameraManager.consumeFrame() {
+        if let frame = currentFrameSource.consumeFrame() {
             images.append(frame)
         }
 
@@ -177,5 +227,18 @@ class SessionViewModel: ObservableObject {
     func resetConversation() async {
         transcript.removeAll()
         await bridge.resetConversation()
+    }
+}
+
+// MARK: - FrameSource configure extension
+
+@MainActor
+private extension FrameSource {
+    func configure(frameInterval: TimeInterval, jpegQuality: CGFloat) {
+        if let cam = self as? CameraManager {
+            cam.configure(frameInterval: frameInterval, jpegQuality: jpegQuality)
+        } else if let rb = self as? RayBanManager {
+            rb.configure(frameInterval: frameInterval, jpegQuality: jpegQuality)
+        }
     }
 }

@@ -139,20 +139,31 @@ struct ContentView: View {
                         }
                     }
 
-                    // Reset conversation
+                    // Frame source toggle (iPhone ↔ Ray-Ban)
                     Button {
-                        Task { await viewModel.resetConversation() }
+                        viewModel.activeFrameSource = viewModel.activeFrameSource == .iPhone ? .rayBan : .iPhone
                     } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.title2)
-                            .foregroundColor(.white)
+                        VStack(spacing: 2) {
+                            Image(systemName: viewModel.activeFrameSource.icon)
+                                .font(.title2)
+                                .foregroundColor(frameSourceColor)
+                            Text(viewModel.activeFrameSource == .iPhone ? "iPhone" : "Ray-Ban")
+                                .font(.system(size: 8))
+                                .foregroundColor(.white.opacity(0.7))
+                        }
                     }
                 }
                 .padding(.bottom, 30)
             }
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView(config: $viewModel.config, isConnected: viewModel.isConnected) {
+            SettingsView(
+                config: $viewModel.config,
+                activeFrameSource: $viewModel.activeFrameSource,
+                isConnected: viewModel.isConnected,
+                frameSourceStatus: viewModel.frameSourceStatus,
+                rayBanManager: viewModel.rayBanManager
+            ) {
                 Task { await viewModel.connect() }
             }
         }
@@ -207,6 +218,15 @@ struct ContentView: View {
         case .speaking: return "speaker.wave.2.fill"
         case .disconnected: return "wifi.slash"
         default: return "mic"
+        }
+    }
+
+    private var frameSourceColor: Color {
+        switch viewModel.frameSourceStatus {
+        case .connected: return .green
+        case .connecting: return .yellow
+        case .error: return .red
+        default: return .white
         }
     }
 }

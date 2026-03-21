@@ -14,6 +14,7 @@
 		513C996089182BCDA9EC21E6 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6399D29511D56878F01F5204 /* CameraManager.swift */; };
 		6405C8BC1770E52F7FF48717 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED8607622DE3C3A56C5185B5 /* SpeechManager.swift */; };
 		724F434A533F1D7D63507D0A /* ClaudeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F3069E25AC77AD72DFEB548 /* ClaudeBridge.swift */; };
+		7B9EB5C35AA99FFC8E91F8B2 /* RayBanManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0160BE25F91F5DE8B717653 /* RayBanManager.swift */; };
 		83375B61622FFB28135BDCA2 /* TranscriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0BC356D66DFF1B96A3C1699 /* TranscriptView.swift */; };
 		856B82DACC849A0DC24A9525 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B5455D3CE56E037F92BB98 /* SettingsView.swift */; };
 		93FFEB466EE30C76CB38732E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5F8AA23E7B6922ACB9BDD28E /* Assets.xcassets */; };
@@ -40,6 +41,7 @@
 		D1533204F4B0090BB686560D /* AudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManager.swift; sourceTree = "<group>"; };
 		D80B4A559F7D180D8DCE6033 /* ClaudeVisionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeVisionApp.swift; sourceTree = "<group>"; };
 		ED8607622DE3C3A56C5185B5 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
+		F0160BE25F91F5DE8B717653 /* RayBanManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RayBanManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -93,6 +95,7 @@
 				6399D29511D56878F01F5204 /* CameraManager.swift */,
 				3F3069E25AC77AD72DFEB548 /* ClaudeBridge.swift */,
 				704D8A46187AD105F8BE0E3F /* FrameSource.swift */,
+				F0160BE25F91F5DE8B717653 /* RayBanManager.swift */,
 				ED8607622DE3C3A56C5185B5 /* SpeechManager.swift */,
 			);
 			path = Services;
@@ -200,6 +203,7 @@
 				9864E1522823865D7292FA82 /* ClaudeVisionApp.swift in Sources */,
 				C7D9F412F3607F657FC2F90A /* ContentView.swift in Sources */,
 				2F08588A0FA5377BED01C1DB /* FrameSource.swift in Sources */,
+				7B9EB5C35AA99FFC8E91F8B2 /* RayBanManager.swift in Sources */,
 				25A8B74F9507C6E8039685DE /* SessionViewModel.swift in Sources */,
 				856B82DACC849A0DC24A9525 /* SettingsView.swift in Sources */,
 				6405C8BC1770E52F7FF48717 /* SpeechManager.swift in Sources */,
