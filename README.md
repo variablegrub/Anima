@@ -16,7 +16,7 @@
         Let Claude see the world through your eyes
 ```
 
-**ClaudeVision** turns your iPhone (or Meta Ray-Ban glasses) into Claude's eyes and ears. Point your camera, speak naturally, and Claude sees what you see — then responds with voice, using your connected tools like email, calendar, and more.
+**VisionClaude** turns your iPhone (or Meta Ray-Ban glasses) into Claude's eyes and ears. Point your camera, speak naturally, and Claude sees what you see — then responds with voice, using your connected tools like email, calendar, and more.
 
 ## How It Works
 
@@ -162,7 +162,7 @@ open ClaudeVision.xcodeproj
 
 ## Meta Ray-Ban Glasses
 
-ClaudeVision supports Meta Ray-Ban Smart Glasses as an alternative camera source. Instead of your iPhone camera, Claude sees through your glasses — fully hands-free.
+VisionClaude supports Meta Ray-Ban Smart Glasses as an alternative camera source. Instead of your iPhone camera, Claude sees through your glasses — fully hands-free.
 
 ### Setup
 
@@ -170,7 +170,7 @@ ClaudeVision supports Meta Ray-Ban Smart Glasses as an alternative camera source
 2. Pair your glasses via Bluetooth
 3. Enable **Developer Mode**: Meta View → Settings → your glasses → Developer Mode → ON
 4. Restart your glasses (hold button 15s to power off, press to power on)
-5. In ClaudeVision, tap the **eyeglasses icon** or go to Settings → Camera Source → Meta Ray-Ban
+5. In VisionClaude, tap the **eyeglasses icon** or go to Settings → Camera Source → Meta Ray-Ban
 
 ### Developer Access
 
@@ -182,33 +182,33 @@ The app includes a built-in setup guide (Settings → Meta Ray-Ban → Setup Ins
 
 By using the Wearables Device Access Toolkit, you agree to the [Meta Wearables Developer Terms](https://wearables.developer.meta.com/terms), including the [Acceptable Use Policy](https://wearables.developer.meta.com/acceptable-use-policy).
 
-By enabling Meta integrations, including through this SDK, Meta may collect information about how users' Meta devices communicate with your app. Meta will use this information in accordance with their [Privacy Policy](https://www.meta.com/legal/privacy-policy/). ClaudeVision opts out of analytics by default via `Info.plist` (`MWDAT → Analytics → OptOut = YES`).
+By enabling Meta integrations, including through this SDK, Meta may collect information about how users' Meta devices communicate with your app. Meta will use this information in accordance with their [Privacy Policy](https://www.meta.com/legal/privacy-policy/). VisionClaude opts out of analytics by default via `Info.plist` (`MWDAT → Analytics → OptOut = YES`).
 
 ## MCP Tools & Claude Desktop Integration
 
-ClaudeVision shares the same MCP servers as your Claude Desktop app. The gateway reads your existing config at:
+VisionClaude shares the same MCP servers as your Claude Desktop app. The gateway reads your existing config at:
 
 ```
 ~/Library/Application Support/Claude/claude_desktop_config.json
 ```
 
-Any MCP server you add to Claude Desktop is automatically available in ClaudeVision — no extra setup needed.
+Any MCP server you add to Claude Desktop is automatically available in VisionClaude — no extra setup needed.
 
 ```
 Claude Desktop  ──→  MCP servers (email, calendar, etc.)
                          ↑
-ClaudeVision    ──→  Gateway Server ──→ same MCP servers
+VisionClaude    ──→  Gateway Server ──→ same MCP servers
 (your phone)         (your Mac)
 ```
 
 ### What's shared
 
-- **MCP servers** — Both Claude Desktop and ClaudeVision connect to the same tool servers (email, calendar, Slack, HubSpot, etc.)
+- **MCP servers** — Both Claude Desktop and VisionClaude connect to the same tool servers (email, calendar, Slack, HubSpot, etc.)
 - **Tool configuration** — Add a server once in Claude Desktop, it appears in both
 
 ### What's separate
 
-- **Conversations** — ClaudeVision has its own conversation history, independent of Claude Desktop
+- **Conversations** — VisionClaude has its own conversation history, independent of Claude Desktop
 - **Models** — Claude Desktop uses your selected model; the gateway defaults to Sonnet (configurable in `server/.env`)
 - **API keys** — The gateway uses its own Anthropic API key
 
@@ -216,7 +216,7 @@ ClaudeVision    ──→  Gateway Server ──→ same MCP servers
 
 1. Open Claude Desktop settings
 2. Add MCP servers (Slack, Google Calendar, HubSpot, etc.)
-3. Restart the ClaudeVision gateway (`./start.sh`)
+3. Restart the VisionClaude gateway (`./start.sh`)
 4. New tools are automatically discovered
 
 ### Voice command examples

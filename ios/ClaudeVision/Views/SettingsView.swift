@@ -304,13 +304,13 @@ struct RayBanInstructionsView: View {
 
                     Divider()
 
-                    sectionHeader("Step 3: Connect in ClaudeVision", icon: "eyeglasses")
+                    sectionHeader("Step 3: Connect in VisionClaude", icon: "eyeglasses")
 
-                    stepView(8, "Return to ClaudeVision")
+                    stepView(8, "Return to VisionClaude")
                     stepView(9, "Go to Settings → Camera Source → select Meta Ray-Ban")
-                    stepView(10, "Tap \"Connect\" — ClaudeVision will register with Meta AI")
+                    stepView(10, "Tap \"Connect\" — VisionClaude will register with Meta AI")
                     stepView(11, "You may be redirected to the Meta AI app to approve the connection — tap Allow")
-                    stepView(12, "Once connected, the camera feed from your glasses will appear in ClaudeVision")
+                    stepView(12, "Once connected, the camera feed from your glasses will appear in VisionClaude")
 
                     Divider()
 
@@ -318,7 +318,7 @@ struct RayBanInstructionsView: View {
                     bulletPoint("No device found: Make sure glasses are powered on with hinges open")
                     bulletPoint("Stream won't start: Check Developer Mode is ON in Meta AI app")
                     bulletPoint("Glasses need update: Open Meta AI app and follow update prompts")
-                    bulletPoint("Connection lost: Close and reopen ClaudeVision, or restart glasses")
+                    bulletPoint("Connection lost: Close and reopen VisionClaude, or restart glasses")
                     linkButton("DAT Developer Docs", url: "https://wearables.developer.meta.com/docs/develop/")
                     linkButton("Community Forum", url: "https://github.com/facebook/meta-wearables-dat-ios/discussions")
 

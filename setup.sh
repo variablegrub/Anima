@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════
-# ClaudeVision Setup — Interactive installer for the ClaudeVision system
+# VisionClaude Setup — Interactive installer for the VisionClaude system
 # ═══════════════════════════════════════════════════════════════════════
 
 set -e
@@ -105,7 +105,7 @@ show_welcome() {
     echo -e "  ${WHITE}1.${RESET} ${LIGHT_ORANGE}Claude Gateway Server${RESET} ${DIM}(Node.js — runs on your Mac)${RESET}"
     echo -e "     ${DIM}Connects Claude API + your MCP tools (email, calendar, etc.)${RESET}"
     echo ""
-    echo -e "  ${WHITE}2.${RESET} ${LIGHT_ORANGE}ClaudeVision iOS App${RESET} ${DIM}(Swift — runs on your iPhone)${RESET}"
+    echo -e "  ${WHITE}2.${RESET} ${LIGHT_ORANGE}VisionClaude iOS App${RESET} ${DIM}(Swift — runs on your iPhone)${RESET}"
     echo -e "     ${DIM}Camera + voice → Claude sees & speaks back${RESET}"
     echo ""
     echo -e "${GRAY}  ─────────────────────────────────────────────────────────${RESET}"
@@ -253,7 +253,7 @@ configure_api_key() {
 
     # Prompt for key
     if [[ -z "$api_key" ]]; then
-        echo -e "  ${WHITE}You need an Anthropic API key to use ClaudeVision.${RESET}"
+        echo -e "  ${WHITE}You need an Anthropic API key to use VisionClaude.${RESET}"
         echo -e "  ${DIM}Get one at: ${CYAN}https://console.anthropic.com/settings/keys${RESET}"
         echo ""
         api_key=$(prompt_secret "Enter your Anthropic API key:")
@@ -408,7 +408,7 @@ build_ios() {
     echo -e "     ${CYAN}open \"$SCRIPT_DIR/ios/ClaudeVision.xcodeproj\"${RESET}"
     echo ""
     echo -e "  ${WHITE}2.${RESET} Select your Apple Developer Team:"
-    echo -e "     ${DIM}Xcode → left sidebar → click \"ClaudeVision\" project${RESET}"
+    echo -e "     ${DIM}Xcode → left sidebar → click the VisionClaude project${RESET}"
     echo -e "     ${DIM}→ \"Signing & Capabilities\" tab → pick your Team${RESET}"
     echo ""
     echo -e "  ${WHITE}3.${RESET} Connect your iPhone via USB cable:"
@@ -452,7 +452,7 @@ build_ios() {
         echo -e "  ${WHITE}Step 6:${RESET} Restart your glasses:"
         echo -e "         ${DIM}• Hold the button for 15 seconds to power off${RESET}"
         echo -e "         ${DIM}• Press the button to power back on${RESET}"
-        echo -e "  ${WHITE}Step 7:${RESET} In ClaudeVision app, tap the ${LIGHT_ORANGE}eyeglasses icon${RESET}"
+        echo -e "  ${WHITE}Step 7:${RESET} In VisionClaude app, tap the ${LIGHT_ORANGE}eyeglasses icon${RESET}"
         echo -e "         ${DIM}or go to Settings → Camera Source → Meta Ray-Ban${RESET}"
         echo ""
         echo -e "  ${GRAY}─────────────────────────────────────────────────────────${RESET}"
@@ -469,7 +469,7 @@ build_ios() {
         echo ""
         echo -e "     ${DIM}By enabling Meta integrations, including through this SDK,${RESET}"
         echo -e "     ${DIM}Meta may collect information about how users' Meta devices${RESET}"
-        echo -e "     ${DIM}communicate with your app. ClaudeVision opts out of analytics${RESET}"
+        echo -e "     ${DIM}communicate with your app. VisionClaude opts out of analytics${RESET}"
         echo -e "     ${DIM}by default via Info.plist (MWDAT → Analytics → OptOut = YES).${RESET}"
         echo ""
     fi
@@ -488,7 +488,7 @@ show_summary() {
     hostname=$(scutil --get LocalHostName 2>/dev/null || hostname -s)
 
     echo -e "  ${GREEN}╔═══════════════════════════════════════════════════════╗${RESET}"
-    echo -e "  ${GREEN}║${RESET}  ${WHITE}ClaudeVision is ready to go!${RESET}                         ${GREEN}║${RESET}"
+    echo -e "  ${GREEN}║${RESET}  ${WHITE}VisionClaude is ready to go!${RESET}                         ${GREEN}║${RESET}"
     echo -e "  ${GREEN}╚═══════════════════════════════════════════════════════╝${RESET}"
     echo ""
     echo -e "  ${ORANGE}Start the gateway server:${RESET}"
@@ -540,7 +540,7 @@ RESET='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo ""
-echo -e "${ORANGE}  ▸ Starting ClaudeVision Gateway...${RESET}"
+echo -e "${ORANGE}  ▸ Starting VisionClaude Gateway...${RESET}"
 echo ""
 
 cd "$SCRIPT_DIR/server"

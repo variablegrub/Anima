@@ -1,7 +1,7 @@
 {
   "name": "claude-gateway",
   "version": "1.0.0",
-  "description": "Claude Vision Gateway Server — bridges iOS app to Claude API with MCP tool routing",
+  "description": "VisionClaude Gateway Server — bridges iOS app to Claude API with MCP tool routing",
   "type": "module",
   "scripts": {
     "build": "tsc",

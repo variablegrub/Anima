@@ -19,7 +19,7 @@ When the user asks you to do something that requires a tool, use the appropriate
 
 async function main() {
   console.log("╔══════════════════════════════════════╗");
-  console.log("║     ClaudeVision Gateway Server      ║");
+  console.log("║     VisionClaude Gateway Server      ║");
   console.log("╚══════════════════════════════════════╝");
 
   // Initialize MCP Manager

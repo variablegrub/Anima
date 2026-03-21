@@ -1,4 +1,4 @@
-# VisionClaw → ClaudeVision Architecture Plan
+# VisionClaw → VisionClaude Architecture Plan
 
 ## Overview
 
@@ -9,7 +9,7 @@ Meta Ray-Ban Glasses (or phone camera)
        |
        | video frames + mic audio
        v
-iOS App (ClaudeVision)
+iOS App (VisionClaude)
        |
        | Local STT (Apple Speech) converts audio → text
        | JPEG frames (~1fps) captured from camera
