@@ -123,6 +123,86 @@ VisionClaude    ──→  Gateway Server ──→ same MCP servers
 (your phone)         (your Mac)
 ```
 
+### Adding MCP Servers
+
+VisionClaude supports both **local** and **remote** MCP servers. Edit your Claude Desktop config to add them:
+
+```bash
+# Open the config file
+nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+**Local MCP server** — runs a command on your Mac:
+
+```json
+{
+  "mcpServers": {
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-slack"],
+      "env": {
+        "SLACK_BOT_TOKEN": "xoxb-your-token"
+      }
+    },
+    "google-calendar": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-google-calendar"],
+      "env": {
+        "GOOGLE_CLIENT_ID": "your-client-id",
+        "GOOGLE_CLIENT_SECRET": "your-secret"
+      }
+    }
+  }
+}
+```
+
+**Remote MCP server** — connects to an HTTP/SSE endpoint:
+
+```json
+{
+  "mcpServers": {
+    "paysponge": {
+      "url": "https://api.wallet.paysponge.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your-api-key"
+      }
+    },
+    "my-custom-api": {
+      "url": "https://my-server.com/mcp"
+    }
+  }
+}
+```
+
+**After adding servers**, restart the gateway:
+
+```bash
+# Kill and restart
+lsof -ti:18790 | xargs kill -9
+cd ClaudeVision/server && npm start
+```
+
+The gateway auto-detects the transport — StreamableHTTP first, SSE fallback for remote servers. Local servers use stdio. Check what connected:
+
+```bash
+curl http://localhost:18790/health | python3 -m json.tool
+curl http://localhost:18790/tools | python3 -m json.tool
+```
+
+### Combining Skills + MCP Tools
+
+Skills become powerful when paired with MCP tools. For example:
+
+| Voice Command | Skill Used | MCP Tool Called |
+|---|---|---|
+| "Read this business card and email them" | vision-describe | hostinger-email → send_email |
+| "Check my PaySponge balance" | — | paysponge → get_balance |
+| "What's on my calendar today?" | — | google-calendar → list_events |
+| "Classify this product for export" | exchek-classify | — (skill instructions only) |
+| "Read this sign and Slack it to the team" | read-text | slack → send_message |
+
+Skills provide Claude with *how to approach* a task. MCP tools provide *what actions* Claude can take. Together they enable complex workflows through simple voice commands.
+
 ### Settings (Persisted)
 All settings save to `UserDefaults` and survive app restarts:
 - Gateway host/port

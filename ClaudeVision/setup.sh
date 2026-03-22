@@ -384,6 +384,31 @@ build_server() {
     echo ""
     print_ok "Gateway server built successfully"
 
+    # MCP server setup guide
+    echo ""
+    echo -e "  ${ORANGE}╔═══════════════════════════════════════════════════════╗${RESET}"
+    echo -e "  ${ORANGE}║${RESET}  ${WHITE}Adding MCP Servers (Tools for Claude)${RESET}              ${ORANGE}║${RESET}"
+    echo -e "  ${ORANGE}╚═══════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+    echo -e "  ${WHITE}VisionClaude supports local and remote MCP servers.${RESET}"
+    echo -e "  ${DIM}Edit: ~/Library/Application Support/Claude/claude_desktop_config.json${RESET}"
+    echo ""
+    echo -e "  ${LIGHT_ORANGE}Local server${RESET} ${DIM}(runs a command on your Mac):${RESET}"
+    echo -e "  ${CYAN}\"slack\": {${RESET}"
+    echo -e "  ${CYAN}  \"command\": \"npx\",${RESET}"
+    echo -e "  ${CYAN}  \"args\": [\"-y\", \"@anthropic/mcp-slack\"],${RESET}"
+    echo -e "  ${CYAN}  \"env\": { \"SLACK_BOT_TOKEN\": \"xoxb-...\" }${RESET}"
+    echo -e "  ${CYAN}}${RESET}"
+    echo ""
+    echo -e "  ${LIGHT_ORANGE}Remote server${RESET} ${DIM}(connects to an HTTP/SSE endpoint):${RESET}"
+    echo -e "  ${CYAN}\"paysponge\": {${RESET}"
+    echo -e "  ${CYAN}  \"url\": \"https://api.wallet.paysponge.com/mcp\",${RESET}"
+    echo -e "  ${CYAN}  \"headers\": { \"Authorization\": \"Bearer sk-...\" }${RESET}"
+    echo -e "  ${CYAN}}${RESET}"
+    echo ""
+    echo -e "  ${DIM}Restart the gateway after adding servers to discover new tools.${RESET}"
+    echo ""
+
     cd "$SCRIPT_DIR"
 }
 
