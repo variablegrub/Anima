@@ -1,11 +1,13 @@
 import { Router } from "express";
 import type { ClaudeClient } from "../claude-client.js";
 import type { ConversationStore } from "../conversation.js";
+import type { RequestQueue } from "../middleware.js";
 import type { ChatRequest, ChatResponse } from "../types.js";
 
 export function createChatRouter(
   claudeClient: ClaudeClient,
-  conversations: ConversationStore
+  conversations: ConversationStore,
+  requestQueue?: RequestQueue
 ): Router {
   const router = Router();
 
@@ -20,11 +22,13 @@ export function createChatRouter(
 
       const { id, messages } = conversations.getOrCreate(body.conversation_id);
 
-      const { responseText, toolCalls } = await claudeClient.chat(
-        messages,
-        body.text || "",
-        body.images
-      );
+      // Queue the API call to prevent concurrent races
+      const chatFn = () =>
+        claudeClient.chat(messages, body.text || "", body.images);
+
+      const { responseText, toolCalls } = requestQueue
+        ? await requestQueue.enqueue(chatFn)
+        : await chatFn();
 
       // Update conversation history
       const userContent: any[] = [];

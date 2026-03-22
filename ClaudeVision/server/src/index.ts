@@ -5,6 +5,7 @@ import { MCPManager } from "./mcp-manager.js";
 import { ClaudeClient } from "./claude-client.js";
 import { ConversationStore } from "./conversation.js";
 import { SkillLoader } from "./skill-loader.js";
+import { gatewayAuth, rateLimiter, RequestQueue } from "./middleware.js";
 import { showBanner, showServerInfo, c } from "./console-theme.js";
 import { createChatRouter } from "./routes/chat.js";
 import { createHealthRouter } from "./routes/health.js";
@@ -64,13 +65,20 @@ async function main() {
   // ── Conversation store ──
   const conversations = new ConversationStore();
 
+  // ── Request queue (prevents concurrent Claude API races) ──
+  const requestQueue = new RequestQueue(2); // max 2 concurrent API calls
+
   // ── Express app ──
   const app = express();
   app.use(cors());
   app.use(express.json({ limit: "50mb" }));
 
+  // ── Security middleware ──
+  app.use(gatewayAuth());    // Optional API key auth (set GATEWAY_API_KEY in .env)
+  app.use(rateLimiter(30));  // 30 requests per minute per IP
+
   // ── Routes ──
-  app.use("/chat", createChatRouter(claudeClient, conversations));
+  app.use("/chat", createChatRouter(claudeClient, conversations, requestQueue));
   app.use("/health", createHealthRouter(mcpManager, conversations, skillLoader));
   app.use("/config", createConfigRouter(claudeClient));
   app.use("/tools", createToolsRouter(mcpManager));
