@@ -1,10 +1,12 @@
 import { Router } from "express";
 import type { MCPManager } from "../mcp-manager.js";
 import type { ConversationStore } from "../conversation.js";
+import type { SkillLoader } from "../skill-loader.js";
 
 export function createHealthRouter(
   mcpManager: MCPManager,
-  conversations: ConversationStore
+  conversations: ConversationStore,
+  skillLoader?: SkillLoader
 ): Router {
   const router = Router();
 
@@ -18,6 +20,10 @@ export function createHealthRouter(
       mcp: {
         servers,
         totalTools: toolCount,
+      },
+      skills: {
+        count: skillLoader?.count ?? 0,
+        loaded: skillLoader?.getSkillList() ?? [],
       },
       conversations: conversations.size,
     });

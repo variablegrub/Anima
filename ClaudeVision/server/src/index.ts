@@ -4,6 +4,8 @@ import cors from "cors";
 import { MCPManager } from "./mcp-manager.js";
 import { ClaudeClient } from "./claude-client.js";
 import { ConversationStore } from "./conversation.js";
+import { SkillLoader } from "./skill-loader.js";
+import { showBanner, showServerInfo, c } from "./console-theme.js";
 import { createChatRouter } from "./routes/chat.js";
 import { createHealthRouter } from "./routes/health.js";
 import { createConfigRouter } from "./routes/config.js";
@@ -35,53 +37,79 @@ TOOLS:
 - You can combine vision analysis with tool use (e.g., "read this business card and save the contact").`;
 
 async function main() {
-  console.log("╔══════════════════════════════════════╗");
-  console.log("║     VisionClaude Gateway Server      ║");
-  console.log("╚══════════════════════════════════════╝");
+  // ── Show Banner ──
+  showBanner();
 
-  // Initialize MCP Manager
+  // ── Initialize MCP Manager ──
   const mcpManager = new MCPManager();
   await mcpManager.initialize();
 
-  // Server config
+  // ── Initialize Skill Loader ──
+  const skillLoader = new SkillLoader();
+  skillLoader.load();
+
+  // ── Build system prompt with skills ──
+  const systemPrompt = DEFAULT_SYSTEM_PROMPT + skillLoader.buildSystemPromptSection();
+
+  // ── Server config ──
   const config: ServerConfig = {
-    systemPrompt: DEFAULT_SYSTEM_PROMPT,
+    systemPrompt,
     model: process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514",
     maxTokens: 4096,
   };
 
-  // Initialize Claude Client
+  // ── Initialize Claude Client ──
   const claudeClient = new ClaudeClient(mcpManager, config);
 
-  // Conversation store
+  // ── Conversation store ──
   const conversations = new ConversationStore();
 
-  // Express app
+  // ── Express app ──
   const app = express();
   app.use(cors());
-  app.use(express.json({ limit: "50mb" })); // Large limit for base64 images
+  app.use(express.json({ limit: "50mb" }));
 
-  // Routes
+  // ── Routes ──
   app.use("/chat", createChatRouter(claudeClient, conversations));
-  app.use("/health", createHealthRouter(mcpManager, conversations));
+  app.use("/health", createHealthRouter(mcpManager, conversations, skillLoader));
   app.use("/config", createConfigRouter(claudeClient));
   app.use("/tools", createToolsRouter(mcpManager));
 
-  // Start server
-  const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log(`\n[Server] Listening on http://0.0.0.0:${PORT}`);
-    console.log(`[Server] Health: http://localhost:${PORT}/health`);
-    console.log(`[Server] Tools:  http://localhost:${PORT}/tools`);
-    console.log(`[Server] Chat:   POST http://localhost:${PORT}/chat\n`);
+  // Skills endpoint
+  app.get("/skills", (_req, res) => {
+    res.json({
+      skills: skillLoader.getSkillList(),
+      count: skillLoader.count,
+    });
   });
 
-  // Graceful shutdown
+  // Skills reload endpoint
+  app.post("/skills/reload", (_req, res) => {
+    skillLoader.reload();
+    // Update system prompt with new skills
+    const newPrompt = DEFAULT_SYSTEM_PROMPT + skillLoader.buildSystemPromptSection();
+    claudeClient.updateConfig({ systemPrompt: newPrompt });
+    res.json({
+      message: "Skills reloaded",
+      skills: skillLoader.getSkillList(),
+      count: skillLoader.count,
+    });
+  });
+
+  // ── Start server ──
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    const mcpServers = mcpManager.getServerNames();
+    const toolCount = mcpManager.getToolsForClaude().length;
+    showServerInfo(PORT, mcpServers.length, toolCount, skillLoader.count);
+  });
+
+  // ── Graceful shutdown ──
   const shutdown = async () => {
-    console.log("\n[Server] Shutting down...");
+    console.log(c.orange("\n   ▸ Shutting down VisionClaude Gateway..."));
     conversations.destroy();
     await mcpManager.shutdown();
     server.close(() => {
-      console.log("[Server] Stopped");
+      console.log(c.dim("   Gateway stopped.\n"));
       process.exit(0);
     });
   };
@@ -91,6 +119,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Fatal error:", err);
+  console.error(c.error("Fatal error:"), err);
   process.exit(1);
 });

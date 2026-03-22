@@ -172,6 +172,10 @@ export class MCPManager {
     return all;
   }
 
+  getServerNames(): string[] {
+    return Array.from(this.servers.keys());
+  }
+
   getServerStatus(): { name: string; toolCount: number }[] {
     return Array.from(this.servers.values()).map((s) => ({
       name: s.name,
