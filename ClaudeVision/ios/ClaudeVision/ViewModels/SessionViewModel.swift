@@ -169,6 +169,15 @@ class SessionViewModel: ObservableObject {
         isConnected = false
     }
 
+    // MARK: - Interrupt
+
+    /// Stop Claude from speaking and go back to idle (or start listening)
+    func interruptSpeaking() {
+        speechManager.stopSpeaking()
+        state = .idle
+        print("[Session] Speaking interrupted by user")
+    }
+
     // MARK: - Voice
 
     func toggleListening() {

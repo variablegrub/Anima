@@ -186,8 +186,16 @@ class SpeechManager: NSObject, ObservableObject {
     // MARK: - STT (Apple Speech — on-device)
 
     func startListening() throws {
-        if isSpeaking { stopSpeaking() }
+        // Stop any current speech first, then wait for audio session to settle
+        if isSpeaking {
+            stopSpeaking()
+            // Give audio session time to transition before reconfiguring
+            Thread.sleep(forTimeInterval: 0.15)
+        }
         stopListening()
+
+        // Reconfigure audio session for recording
+        try? AudioSessionManager.shared.configureForVoiceChat()
 
         // Reset audio engine to pick up current route (iPhone mic vs Bluetooth)
         audioEngine.reset()
@@ -208,7 +216,7 @@ class SpeechManager: NSObject, ObservableObject {
         let recordingFormat = inputNode.outputFormat(forBus: 0)
 
         // Guard against zero-channel format (happens during route transitions)
-        guard recordingFormat.channelCount > 0 else {
+        guard recordingFormat.channelCount > 0, recordingFormat.sampleRate > 0 else {
             throw NSError(domain: "SpeechManager", code: -1,
                          userInfo: [NSLocalizedDescriptionKey: "Audio input not ready — try again"])
         }

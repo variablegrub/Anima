@@ -232,9 +232,12 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity)
             }
 
-            // Mic button
+            // Mic button — also stops speaking when tapped during playback
             Button {
-                if viewModel.isConnected {
+                if viewModel.state == .speaking {
+                    // Interrupt Claude — stop talking and start listening
+                    viewModel.interruptSpeaking()
+                } else if viewModel.isConnected {
                     viewModel.toggleListening()
                 } else {
                     Task { await viewModel.connect() }
@@ -312,7 +315,7 @@ struct ContentView: View {
         switch viewModel.state {
         case .listening: return "mic.fill"
         case .thinking: return "ellipsis"
-        case .speaking: return "speaker.wave.2.fill"
+        case .speaking: return "stop.fill"  // Tap to interrupt
         case .disconnected: return "wifi.slash"
         default: return "mic"
         }
