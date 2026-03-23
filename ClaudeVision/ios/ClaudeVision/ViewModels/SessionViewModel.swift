@@ -210,8 +210,11 @@ class SessionViewModel: ObservableObject {
 
     func interruptSpeaking() {
         speechManager.stopSpeaking()
-        state = .idle
-        print("[Session] Speaking interrupted by user")
+        print("[Session] Speaking interrupted by user — resuming listening")
+        // Brief delay for audio session to settle after stopping playback
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.startListening()
+        }
     }
 
     // MARK: - Voice
