@@ -34,6 +34,19 @@
 
 ## How It Works
 
+VisionClaude has **two modes**: Channel Mode (recommended) connects directly to your Claude Code session. Gateway Mode runs a standalone server.
+
+### Channel Mode (Direct Claude Code Integration)
+
+```
+iPhone/Glasses  ──→  Channel Plugin  ──→  Claude Code (Opus)
+  (camera+voice)     (WebSocket)          ALL your MCP tools
+                                          ALL your skills
+                                          Full Cowork session
+```
+
+### Gateway Mode (Standalone)
+
 ```
 iPhone (1080p)  ╲
   or             → Gateway Server → Claude API
@@ -60,7 +73,7 @@ cd visionclaude/ClaudeVision
 The interactive setup walks you through everything with step-by-step guidance:
 
 <p align="center">
-<img src="docs/images/setup-screenshot.png" alt="VisionClaude Setup" width="500" />
+<img src="ClaudeVision/docs/images/setup-screenshot.png" alt="VisionClaude Setup" width="500" />
 </p>
 
 ## Requirements
@@ -73,6 +86,104 @@ The interactive setup walks you through everything with step-by-step guidance:
 | iPhone | iOS 17+ (physical device, not Simulator) |
 | Anthropic API Key | [console.anthropic.com](https://console.anthropic.com/settings/keys) |
 | ElevenLabs Key | Optional — [elevenlabs.io](https://elevenlabs.io/app/settings/api-keys) |
+
+## Channel Mode (Recommended)
+
+Channel Mode connects your phone directly to your running Claude Code session — no separate API key, no gateway server. Your phone becomes a camera/mic/speaker for Claude Code with access to ALL your MCP tools and skills.
+
+### Setup
+
+**1. Install Claude Code CLI** (if not already):
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+**2. Add the VisionClaude MCP server** to your project's `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "visionclaude": {
+      "command": "bun",
+      "args": ["run", "--cwd", "/path/to/visionclaude/ClaudeVision/channel", "--shell=bun", "--silent", "start"]
+    }
+  }
+}
+```
+
+**3. Launch Claude Code with the channel:**
+
+```bash
+claude --dangerously-load-development-channels "server:visionclaude"
+```
+
+You'll see:
+```
+Listening for channel messages from: server:visionclaude
+[visionclaude] 🔐 Channel Token: a3f7b2c9e1d4f6a8...
+[visionclaude]    Enter this token in iOS app → Settings → Channel Token
+```
+
+**4. Get your Mac's local IP:**
+
+```bash
+ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}'
+```
+
+**5. In the iOS app** → Settings:
+- **Gateway Host** → your Mac's IP (e.g. `192.168.1.233`)
+- **Port** → `18790`
+- **Channel Token** → paste the token from step 3
+
+### Security
+
+Channel Mode uses a shared secret token for authentication:
+
+- **Auto-generated** on first run (32-char hex, saved to `~/.claude/channels/visionclaude/.channel-token`)
+- **Required** for WebSocket, upload, message, and file endpoints
+- **Health check** remains public (just returns status)
+- **Override** with `VISIONCLAUDE_TOKEN=your-custom-token` env var
+
+Without the token, connections are rejected with `401 Unauthorized`.
+
+### Auto-Approve Permissions
+
+By default, Claude Code prompts for approval on every action triggered from the phone. To enable hands-free operation:
+
+**Option 1: Auto-approve channel replies only** (safest)
+
+Add to your `.claude/settings.local.json`:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__visionclaude__reply",
+      "mcp__visionclaude__edit_message",
+      "Read(~/.claude/channels/visionclaude/**)"
+    ]
+  }
+}
+```
+
+**Option 2: Auto-approve all VisionClaude tools** (convenient)
+
+```bash
+claude --dangerously-load-development-channels "server:visionclaude" \
+  --allowedTools "mcp__visionclaude__*"
+```
+
+**Option 3: Full hands-free mode** (use with care)
+
+```bash
+claude --dangerously-load-development-channels "server:visionclaude" \
+  -p bypassPermissions
+```
+
+This skips ALL permission prompts — Claude can use any tool (email, file system, etc.) without asking. Only use this when you trust the environment.
+
+---
 
 ## Features
 
