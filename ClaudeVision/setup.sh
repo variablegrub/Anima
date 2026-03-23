@@ -783,6 +783,45 @@ show_summary() {
     echo -e "  ${DIM}  Not affiliated with or endorsed by Anthropic, Meta, or ElevenLabs.${RESET}"
     echo -e "  ${GRAY}─────────────────────────────────────────────────────────${RESET}"
     echo ""
+
+    # Offer to launch now
+    echo -e "  ${ORANGE}▸ Ready to launch?${RESET}"
+    echo ""
+
+    if command -v claude &>/dev/null && [[ -f "$SCRIPT_DIR/../.mcp.json" ]] && grep -q "visionclaude" "$SCRIPT_DIR/../.mcp.json" 2>/dev/null; then
+        # Channel Mode available
+        if prompt_confirm "Launch Channel Mode now? (opens dashboard + Claude Code)"; then
+            echo ""
+            print_info "Starting VisionClaude channel..."
+            echo -e "  ${DIM}Dashboard will open at ${CYAN}http://localhost:18790${RESET}"
+            echo -e "  ${DIM}Copy Token + IP → paste into iOS app → Connect${RESET}"
+            echo -e "  ${DIM}Press Ctrl+C to stop.${RESET}"
+            echo ""
+            cd "$SCRIPT_DIR/.."
+            exec claude --dangerously-load-development-channels "server:visionclaude"
+        fi
+    fi
+
+    if [[ -f "$SCRIPT_DIR/server/dist/index.js" ]]; then
+        # Gateway Mode available
+        if prompt_confirm "Launch Gateway Mode now?"; then
+            echo ""
+            print_info "Starting VisionClaude gateway server..."
+            echo -e "  ${DIM}Press Ctrl+C to stop.${RESET}"
+            echo ""
+            cd "$SCRIPT_DIR/server"
+            exec npm start
+        fi
+    fi
+
+    echo ""
+    echo -e "  ${DIM}You can start VisionClaude anytime with:${RESET}"
+    if command -v claude &>/dev/null; then
+        echo -e "    ${CYAN}cd \"$(cd "$SCRIPT_DIR/.." && pwd)\" && claude --dangerously-load-development-channels \"server:visionclaude\"${RESET}"
+    else
+        echo -e "    ${CYAN}cd \"$SCRIPT_DIR/server\" && npm start${RESET}"
+    fi
+    echo ""
 }
 
 # ═══════════════════════════════════════════════════════════════════════
