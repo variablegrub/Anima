@@ -122,7 +122,7 @@ show_welcome() {
 # STEP 1: Check System Dependencies
 # ═══════════════════════════════════════════════════════════════════════
 check_dependencies() {
-    print_step "Step 1/6 — Checking Dependencies"
+    print_step "Step 1/7 — Checking Dependencies"
     echo ""
 
     local all_good=true
@@ -194,6 +194,22 @@ check_dependencies() {
         print_info "Install: ${CYAN}brew install xcodegen${RESET}"
     fi
 
+    # Bun (needed for Channel Mode)
+    if command -v bun &>/dev/null; then
+        print_ok "Bun $(bun --version 2>/dev/null)"
+    else
+        print_warn "Bun not found — needed for Channel Mode (recommended)"
+        print_info "Install: ${CYAN}curl -fsSL https://bun.sh/install | bash${RESET}"
+    fi
+
+    # Claude Code CLI (needed for Channel Mode)
+    if command -v claude &>/dev/null; then
+        print_ok "Claude Code CLI installed"
+    else
+        print_warn "Claude Code CLI not found — needed for Channel Mode"
+        print_info "Install: ${CYAN}npm install -g @anthropic-ai/claude-code${RESET}"
+    fi
+
     # Check for Anthropic API key in environment
     if [[ -n "$ANTHROPIC_API_KEY" ]]; then
         print_ok "ANTHROPIC_API_KEY found in environment"
@@ -227,6 +243,19 @@ check_dependencies() {
                 brew install node 2>&1 | tail -1
                 print_ok "Node.js installed"
             fi
+
+            if ! command -v bun &>/dev/null; then
+                print_info "Installing Bun..."
+                curl -fsSL https://bun.sh/install | bash 2>&1 | tail -1
+                export PATH="$HOME/.bun/bin:$PATH"
+                print_ok "Bun installed"
+            fi
+
+            if ! command -v claude &>/dev/null; then
+                print_info "Installing Claude Code CLI..."
+                npm install -g @anthropic-ai/claude-code 2>&1 | tail -1
+                print_ok "Claude Code CLI installed"
+            fi
         else
             exit 1
         fi
@@ -237,7 +266,7 @@ check_dependencies() {
 # STEP 2: Configure API Key
 # ═══════════════════════════════════════════════════════════════════════
 configure_api_key() {
-    print_step "Step 2/6 — Anthropic API Key"
+    print_step "Step 2/7 — Anthropic API Key"
     echo ""
 
     local api_key=""
@@ -297,7 +326,7 @@ EOF
 # STEP 3: Configure ElevenLabs TTS (Optional)
 # ═══════════════════════════════════════════════════════════════════════
 configure_elevenlabs() {
-    print_step "Step 3/6 — ElevenLabs Voice (Optional)"
+    print_step "Step 3/7 — ElevenLabs Voice (Optional)"
     echo ""
 
     echo -e "  ${ORANGE}ElevenLabs provides premium text-to-speech voices.${RESET}"
@@ -343,7 +372,7 @@ configure_elevenlabs() {
 # STEP 4: Build Gateway Server
 # ═══════════════════════════════════════════════════════════════════════
 build_server() {
-    print_step "Step 4/6 — Building Gateway Server"
+    print_step "Step 4/7 — Building Gateway Server"
     echo ""
 
     cd "$SCRIPT_DIR/server"
@@ -416,7 +445,7 @@ build_server() {
 # STEP 5: Build iOS App (Optional)
 # ═══════════════════════════════════════════════════════════════════════
 build_ios() {
-    print_step "Step 5/6 — iOS App Setup"
+    print_step "Step 5/7 — iOS App Setup"
     echo ""
 
     if ! command -v xcodebuild &>/dev/null; then
@@ -568,10 +597,118 @@ build_ios() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════
-# STEP 6: Final Summary
+# STEP 6: Channel Mode Setup
+# ═══════════════════════════════════════════════════════════════════════
+setup_channel_mode() {
+    print_step "Step 6/7 — Channel Mode Setup (Recommended)"
+    echo ""
+
+    echo -e "  ${ORANGE}╔═══════════════════════════════════════════════════════╗${RESET}"
+    echo -e "  ${ORANGE}║${RESET}  ${WHITE}⚡ Channel Mode — Direct Claude Code Integration${RESET}     ${ORANGE}║${RESET}"
+    echo -e "  ${ORANGE}╚═══════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+    echo -e "  ${DIM}Channel Mode connects your phone directly to your Claude${RESET}"
+    echo -e "  ${DIM}Code session. ALL your MCP tools and skills are available${RESET}"
+    echo -e "  ${DIM}through voice — no separate API key needed on the phone.${RESET}"
+    echo ""
+
+    if ! prompt_confirm "Set up Channel Mode?"; then
+        print_dim "Skipping. You can use Gateway Mode instead (see completion screen)."
+        return 0
+    fi
+
+    echo ""
+
+    # Check bun
+    if ! command -v bun &>/dev/null; then
+        print_info "Installing Bun (required for channel server)..."
+        curl -fsSL https://bun.sh/install | bash 2>&1 | tail -3
+        export PATH="$HOME/.bun/bin:$PATH"
+        if command -v bun &>/dev/null; then
+            print_ok "Bun installed"
+        else
+            print_fail "Bun install failed. Install manually: curl -fsSL https://bun.sh/install | bash"
+            return 1
+        fi
+    else
+        print_ok "Bun $(bun --version)"
+    fi
+
+    # Check claude CLI
+    if ! command -v claude &>/dev/null; then
+        print_info "Installing Claude Code CLI..."
+        npm install -g @anthropic-ai/claude-code 2>&1 | tail -3
+        if command -v claude &>/dev/null; then
+            print_ok "Claude Code CLI installed"
+        else
+            print_fail "Claude Code CLI install failed. Install manually: npm install -g @anthropic-ai/claude-code"
+        fi
+    else
+        print_ok "Claude Code CLI installed"
+    fi
+
+    # Install channel dependencies
+    print_info "Installing channel server dependencies..."
+    cd "$SCRIPT_DIR/channel"
+    bun install --no-summary 2>&1
+    print_ok "Channel dependencies installed"
+    cd "$SCRIPT_DIR"
+
+    # Create .mcp.json in project root
+    local channel_path="$SCRIPT_DIR/channel/server.ts"
+    local mcp_json="$SCRIPT_DIR/../.mcp.json"
+
+    if [[ -f "$mcp_json" ]]; then
+        print_dim ".mcp.json already exists — checking for visionclaude entry"
+        if grep -q "visionclaude" "$mcp_json" 2>/dev/null; then
+            print_ok "VisionClaude already configured in .mcp.json"
+        else
+            print_warn ".mcp.json exists but doesn't have visionclaude — add it manually"
+            echo -e "    ${DIM}Add this to your .mcp.json mcpServers:${RESET}"
+            echo -e "    ${CYAN}\"visionclaude\": { \"command\": \"bun\", \"args\": [\"run\", \"$channel_path\"] }${RESET}"
+        fi
+    else
+        cat > "$mcp_json" << MCPEOF
+{
+  "mcpServers": {
+    "visionclaude": {
+      "command": "bun",
+      "args": ["run", "$channel_path"]
+    }
+  }
+}
+MCPEOF
+        print_ok "Created .mcp.json with VisionClaude channel"
+    fi
+
+    echo ""
+    echo -e "  ${GRAY}─────────────────────────────────────────────────────────${RESET}"
+    echo ""
+    echo -e "  ${WHITE}How to connect your phone:${RESET}"
+    echo ""
+    echo -e "  ${LIGHT_ORANGE}1.${RESET} Start Claude Code with the channel:"
+    echo -e "     ${CYAN}claude --dangerously-load-development-channels \"server:visionclaude\"${RESET}"
+    echo ""
+    echo -e "  ${LIGHT_ORANGE}2.${RESET} Dashboard opens at ${CYAN}http://localhost:18790${RESET}"
+    echo -e "     ${DIM}Shows your Token, Mac IP, and copy buttons${RESET}"
+    echo ""
+    echo -e "  ${LIGHT_ORANGE}3.${RESET} In the iOS app → Settings:"
+    echo -e "     ${DIM}• Host → your Mac IP (from dashboard)${RESET}"
+    echo -e "     ${DIM}• Port → 18790${RESET}"
+    echo -e "     ${DIM}• Channel Token → copy from dashboard${RESET}"
+    echo ""
+    echo -e "  ${LIGHT_ORANGE}4.${RESET} Tap Connect → green status = ready!"
+    echo ""
+    echo -e "  ${DIM}You can also send setup info to your phone via iMessage${RESET}"
+    echo -e "  ${DIM}directly from the dashboard — no manual copy needed.${RESET}"
+    echo ""
+}
+
+# ═══════════════════════════════════════════════════════════════════════
+# STEP 7: Final Summary
 # ═══════════════════════════════════════════════════════════════════════
 show_summary() {
-    print_step "Step 6/6 — Setup Complete!"
+    print_step "Step 7/7 — Setup Complete!"
     echo ""
 
     local hostname
@@ -698,11 +835,45 @@ main() {
     fi
 
     check_dependencies
-    configure_api_key
-    configure_elevenlabs
-    build_server
-    build_ios
-    create_start_script
+
+    # Ask user which mode they want
+    echo ""
+    echo -e "  ${ORANGE}╔═══════════════════════════════════════════════════════╗${RESET}"
+    echo -e "  ${ORANGE}║${RESET}  ${WHITE}Choose your connection mode:${RESET}                         ${ORANGE}║${RESET}"
+    echo -e "  ${ORANGE}╚═══════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+    echo -e "  ${LIGHT_ORANGE}⚡ Channel Mode (Recommended)${RESET}"
+    echo -e "     ${DIM}Connects directly to Claude Code on your Mac${RESET}"
+    echo -e "     ${DIM}ALL your MCP tools + skills via voice${RESET}"
+    echo -e "     ${DIM}No API key needed on the phone${RESET}"
+    echo ""
+    echo -e "  ${DIM}🌐 Gateway Mode (Standalone)${RESET}"
+    echo -e "     ${DIM}Uses Claude API directly with your own key${RESET}"
+    echo -e "     ${DIM}Works without Claude Code installed${RESET}"
+    echo ""
+
+    local use_channel=true
+    if prompt_confirm "Use Channel Mode? (Recommended — connects to Claude Code)"; then
+        use_channel=true
+    else
+        use_channel=false
+        print_dim "Using Gateway Mode — will need your Anthropic API key."
+    fi
+
+    if [[ "$use_channel" == true ]]; then
+        # Channel Mode: skip API key + gateway build, go straight to channel + iOS
+        configure_elevenlabs
+        build_ios
+        setup_channel_mode
+    else
+        # Gateway Mode: need API key + build server
+        configure_api_key
+        configure_elevenlabs
+        build_server
+        build_ios
+        create_start_script
+    fi
+
     show_summary
 }
 
