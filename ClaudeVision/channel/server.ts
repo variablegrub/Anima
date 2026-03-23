@@ -297,6 +297,19 @@ Bun.serve({
       })
     }
 
+    // ── Local IP endpoint ─────────────────────────────────────────────
+    if (url.pathname === '/local-ip') {
+      const { networkInterfaces } = await import('os')
+      const nets = networkInterfaces()
+      const ips: string[] = []
+      for (const name of Object.keys(nets)) {
+        for (const net of nets[name] ?? []) {
+          if (net.family === 'IPv4' && !net.internal) ips.push(net.address)
+        }
+      }
+      return Response.json({ ips, preferred: ips[0] ?? 'unknown' })
+    }
+
     // ── Token endpoint (localhost only — so user can grab it) ────────
     if (url.pathname === '/token') {
       const reqHost = req.headers.get('host') ?? ''
@@ -374,11 +387,38 @@ Bun.serve({
       })
     }
 
+    // ── Save ElevenLabs key ─────────────────────────────────────────────
+    if (url.pathname === '/config/tts' && req.method === 'POST') {
+      if (!checkAuth(req)) return unauthorized()
+      try {
+        const body = await req.json() as { key?: string }
+        if (!body.key) return Response.json({ error: 'missing key' }, { status: 400 })
+        mkdirSync(STATE_DIR, { recursive: true })
+        // Read existing .env, update or add ELEVENLABS_API_KEY
+        let envContent = ''
+        try { envContent = readFileSync(ENV_FILE, 'utf8') } catch {}
+        if (envContent.includes('ELEVENLABS_API_KEY=')) {
+          envContent = envContent.replace(/ELEVENLABS_API_KEY=.*/, `ELEVENLABS_API_KEY=${body.key}`)
+        } else {
+          envContent += `\nELEVENLABS_API_KEY=${body.key}`
+        }
+        writeFileSync(ENV_FILE, envContent.trim() + '\n')
+        return Response.json({ ok: true })
+      } catch (e) {
+        return Response.json({ error: String(e) }, { status: 500 })
+      }
+    }
+
     // ── Root: show status page ──────────────────────────────────────────
     if (url.pathname === '/') {
-      return new Response(STATUS_HTML, {
-        headers: { 'content-type': 'text/html; charset=utf-8' },
-      })
+      try {
+        const html = readFileSync(join(import.meta.dir, 'status.html'), 'utf8')
+        return new Response(html, {
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        })
+      } catch {
+        return new Response('Status page not found', { status: 500 })
+      }
     }
 
     return new Response('404', { status: 404 })
@@ -433,45 +473,5 @@ log(`   Upload:    POST http://localhost:${PORT}/upload`)
 log(`   TTS:       ${ELEVENLABS_KEY ? '✅ ElevenLabs configured' : '❌ No ElevenLabs key'}`)
 log(``)
 log(`   🔐 Channel Token: ${CHANNEL_TOKEN}`)
-log(`   Enter this token in iOS app → Settings → Channel Token`)
-log(`   Token saved to: ${join(STATE_DIR, '.channel-token')}`)
-
-// ── Status HTML ─────────────────────────────────────────────────────────────
-const STATUS_HTML = `<!doctype html>
-<meta charset="utf-8"><title>VisionClaude Channel</title>
-<style>
-  body { font-family: -apple-system, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #1a1a2e; color: #e0e0e0; }
-  h1 { color: #E87B35; font-size: 24px; }
-  .status { background: #16213e; padding: 16px; border-radius: 8px; margin: 16px 0; }
-  .ok { color: #4ade80; } .warn { color: #facc15; }
-  code { background: #0f3460; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-  a { color: #E87B35; }
-</style>
-<h1>🕶️ VisionClaude Channel</h1>
-<div class="status">
-  <p><span class="ok">●</span> Channel server running</p>
-  <p>Mode: <strong>Claude Code Channel</strong> (direct session integration)</p>
-  <p>Port: <code>${PORT}</code></p>
-  <p>TTS: ${ELEVENLABS_KEY ? '<span class="ok">● ElevenLabs configured</span>' : '<span class="warn">● No ElevenLabs key</span>'}</p>
-</div>
-<div style="background:#0f3460;border:2px solid #E87B35;border-radius:8px;padding:16px;margin:16px 0;text-align:center;">
-  <p style="margin:0 0 8px;font-size:14px;color:#aaa;">🔐 Channel Token — enter this in iOS app Settings</p>
-  <div id="token" style="font-family:monospace;font-size:18px;color:#E87B35;letter-spacing:2px;cursor:pointer;word-break:break-all;" onclick="copyToken()">loading...</div>
-  <button onclick="copyToken()" style="background:#E87B35;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:10px;font-size:14px;">📋 Copy Token</button>
-</div>
-<div class="status">
-  <p style="margin:0 0 4px;font-size:14px;color:#aaa;">📱 iOS App Settings</p>
-  <p>Host: <code id="ip">loading...</code></p>
-  <p>Port: <code>${PORT}</code></p>
-</div>
-<div class="status">
-  <h3>How it works</h3>
-  <p>Your iOS app connects via WebSocket. Messages are pushed directly into your running Claude Code session. Claude has full access to ALL your MCP tools and skills.</p>
-  <p>No separate API key. No gateway. Direct integration.</p>
-</div>
-<script>
-fetch('/token').then(r=>r.json()).then(d=>{document.getElementById('token').textContent=d.token}).catch(()=>{document.getElementById('token').textContent='Open from localhost to see token'});
-document.getElementById('ip').textContent=location.hostname==='localhost'||location.hostname==='127.0.0.1'?'Use your Mac IP (run: ifconfig | grep inet)':location.hostname;
-function copyToken(){var t=document.getElementById('token').textContent;navigator.clipboard.writeText(t).then(()=>{event.target.textContent='✅ Copied!';setTimeout(()=>event.target.textContent='📋 Copy Token',2000)})}
-</script>
-`
+log(`   Dashboard:  http://localhost:${PORT}`)
+log(`   Enter token in iOS app → Settings → Channel Token`)
