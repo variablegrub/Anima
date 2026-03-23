@@ -400,12 +400,15 @@ Bun.serve({
         if (!body.phone || !body.message) {
           return Response.json({ error: 'missing phone or message' }, { status: 400 })
         }
-        const phone = body.phone.replace(/[^0-9+]/g, '') // sanitize
-        const msg = body.message.replace(/"/g, '\\"').replace(/\\/g, '\\\\') // escape for AppleScript
+        // Support both phone numbers and email addresses (Apple ID)
+        const recipient = body.phone.includes('@')
+          ? body.phone.trim()  // email — use as-is
+          : body.phone.replace(/[^0-9+]/g, '')  // phone — strip non-numeric
+        const msg = body.message.replace(/\\/g, '\\\\').replace(/"/g, '\\"') // escape for AppleScript
         const script = `
           tell application "Messages"
             set targetService to 1st service whose service type = iMessage
-            set targetBuddy to buddy "${phone}" of targetService
+            set targetBuddy to buddy "${recipient}" of targetService
             send "${msg}" to targetBuddy
           end tell
         `
