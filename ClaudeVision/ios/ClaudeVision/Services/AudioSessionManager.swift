@@ -30,18 +30,51 @@ class AudioSessionManager {
     /// Route audio input to Bluetooth mic (glasses) if available
     func routeToBluetoothMicIfAvailable() {
         let session = AVAudioSession.sharedInstance()
-        guard let availableInputs = session.availableInputs else { return }
+        guard let availableInputs = session.availableInputs else {
+            print("[Audio] No available inputs found")
+            return
+        }
 
-        // Look for Bluetooth HFP input (glasses mic)
+        // Log all available inputs for debugging
         for input in availableInputs {
-            if input.portType == .bluetoothHFP {
+            print("[Audio] Available input: \(input.portName) type=\(input.portType.rawValue) uid=\(input.uid)")
+        }
+
+        // Log current route
+        let currentRoute = session.currentRoute
+        for input in currentRoute.inputs {
+            print("[Audio] Current input route: \(input.portName) type=\(input.portType.rawValue)")
+        }
+        for output in currentRoute.outputs {
+            print("[Audio] Current output route: \(output.portName) type=\(output.portType.rawValue)")
+        }
+
+        // Priority order: HFP first (best for mic), then any Bluetooth input
+        let bluetoothTypes: [AVAudioSession.Port] = [.bluetoothHFP, .bluetoothA2DP, .bluetoothLE]
+        for btType in bluetoothTypes {
+            for input in availableInputs {
+                if input.portType == btType {
+                    do {
+                        try session.setPreferredInput(input)
+                        print("[Audio] ✅ Routed mic to Bluetooth: \(input.portName) (\(btType.rawValue))")
+                        return
+                    } catch {
+                        print("[Audio] Failed to route to \(input.portName): \(error)")
+                    }
+                }
+            }
+        }
+
+        // Also check for Ray-Ban by name as fallback
+        for input in availableInputs {
+            if input.portName.lowercased().contains("ray-ban") || input.portName.lowercased().contains("meta") {
                 do {
                     try session.setPreferredInput(input)
-                    print("[Audio] Routed mic input to Bluetooth: \(input.portName)")
+                    print("[Audio] ✅ Routed mic to glasses by name: \(input.portName)")
+                    return
                 } catch {
-                    print("[Audio] Failed to route to Bluetooth mic: \(error)")
+                    print("[Audio] Failed to route to \(input.portName): \(error)")
                 }
-                return
             }
         }
 

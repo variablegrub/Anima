@@ -170,9 +170,17 @@ class SessionViewModel: ObservableObject {
         rayBanManager.stop()
 
         if activeFrameSource == .rayBan {
-            AudioSessionManager.shared.routeToBluetoothMicIfAvailable()
+            // Reconfigure audio session for Bluetooth, then route mic
+            try? AudioSessionManager.shared.configureForVoiceChat()
+            // Retry mic routing after DAT SDK has had time to set up streaming
+            // The SDK may reset the audio route when it starts
+            for delay in [0.5, 1.5, 3.0] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    AudioSessionManager.shared.routeToBluetoothMicIfAvailable()
+                }
+            }
             if isConnected && !speechManager.isListening {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
                     self?.startListening()
                 }
             }
