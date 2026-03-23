@@ -41,7 +41,7 @@ try {
   }
 } catch {}
 
-const ELEVENLABS_KEY = process.env.ELEVENLABS_API_KEY ?? ''
+let ELEVENLABS_KEY = process.env.ELEVENLABS_API_KEY ?? ''
 const ELEVENLABS_VOICE = process.env.ELEVENLABS_VOICE_ID ?? 'XB0fDUnXU5powFXDhCwa' // Charlotte
 const ELEVENLABS_MODEL = 'eleven_flash_v2_5'
 
@@ -450,7 +450,11 @@ Bun.serve({
           envContent += `\nELEVENLABS_API_KEY=${body.key}`
         }
         writeFileSync(ENV_FILE, envContent.trim() + '\n')
-        return Response.json({ ok: true })
+        // Update in-memory key immediately — no restart needed
+        ELEVENLABS_KEY = body.key
+        process.env.ELEVENLABS_API_KEY = body.key
+        log(`🎙 ElevenLabs key updated (live, no restart needed)`)
+        return Response.json({ ok: true, applied: true })
       } catch (e) {
         return Response.json({ error: String(e) }, { status: 500 })
       }

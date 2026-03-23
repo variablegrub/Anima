@@ -132,24 +132,47 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><span class="icon">▸</span> 📊 ACTIVITY LOG</div>
-    <div id="activity-log" style="max-height:200px;overflow-y:auto;font-size:11px;">
-      <div style="color:#444;text-align:center;padding:12px;">No activity yet</div>
-    </div>
-  </div>
-
-  <div class="card">
     <div class="card-header"><span class="icon">▸</span> 🎙 ELEVENLABS TTS</div>
     <div class="msg-row">
       <input class="msg-input" id="eleven-key" type="password" placeholder="Paste your ElevenLabs API key...">
-      <button class="btn" onclick="saveElevenKey()">Save</button>
+      <button class="btn" onclick="saveElevenKey()">Save & Apply</button>
     </div>
     <div id="eleven-status" style="font-size:11px;color:#666;margin-top:6px;min-height:16px;">Checking...</div>
+    <div style="font-size:10px;color:#444;margin-top:8px;">Get a free key at <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" style="color:#E87B35">elevenlabs.io</a> — enables natural voice responses. Without it, Apple's built-in TTS is used.</div>
+  </div>
+
+  <!-- Help / Quick Reference -->
+  <div class="card" style="border-color:#222;">
+    <div class="card-header"><span class="icon">▸</span> 📖 QUICK REFERENCE</div>
+    <div style="font-size:11px;line-height:1.8;color:#888;">
+      <div style="margin-bottom:8px;color:#c0c0c0;font-size:12px;">Getting Started</div>
+      <div>1. Copy the <span style="color:#E87B35">Token</span> and <span style="color:#4ade80">Host IP</span> above</div>
+      <div>2. Open VisionClaude on your iPhone → <span style="color:#c0c0c0">Settings</span></div>
+      <div>3. Enter Host, Port (<span style="color:#c0c0c0">18790</span>), and Channel Token</div>
+      <div>4. Tap <span style="color:#c0c0c0">Connect</span> → green status = ready</div>
+      <div>5. Point camera and speak — Claude sees + responds</div>
+
+      <div style="margin:12px 0 8px;color:#c0c0c0;font-size:12px;">Useful Commands</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <span style="color:#666;">Start channel:</span><code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;font-size:10px;color:#E87B35;">claude --dangerously-load-development-channels "server:visionclaude"</code>
+        <span style="color:#666;">Auto-approve replies:</span><code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;font-size:10px;color:#E87B35;">--allowedTools "mcp__visionclaude__*"</code>
+        <span style="color:#666;">Hands-free mode:</span><code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;font-size:10px;color:#E87B35;">-p bypassPermissions</code>
+        <span style="color:#666;">Health check:</span><code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;font-size:10px;color:#E87B35;">curl localhost:18790/health</code>
+      </div>
+
+      <div style="margin:12px 0 8px;color:#c0c0c0;font-size:12px;">Troubleshooting</div>
+      <div><span style="color:#E87B35;">App won't connect?</span> Make sure phone and Mac are on the same WiFi network</div>
+      <div><span style="color:#E87B35;">401 errors?</span> Token in app must match the one shown above</div>
+      <div><span style="color:#E87B35;">No voice response?</span> Add your ElevenLabs key above, or check volume</div>
+      <div><span style="color:#E87B35;">Glasses not streaming?</span> Enable Developer Mode in Meta AI app → restart glasses</div>
+      <div><span style="color:#E87B35;">Port in use?</span> <code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;font-size:10px;color:#E87B35;">lsof -ti:18790 | xargs kill -9</code></div>
+    </div>
   </div>
 
   <div class="footer">
-    <a href="https://github.com/mrdulasolutions/visionclaude">github.com/mrdulasolutions/visionclaude</a><br>
-    Built by <a href="https://github.com/mrdulasolutions">@mrdulasolutions</a>
+    <a href="https://github.com/mrdulasolutions/visionclaude">github.com/mrdulasolutions/visionclaude</a> · <a href="https://github.com/mrdulasolutions/visionclaude/issues">Report Issue</a><br>
+    Built by <a href="https://github.com/mrdulasolutions">@mrdulasolutions</a><br>
+    <span style="color:#222;font-size:9px;">Not affiliated with Anthropic, Meta, or ElevenLabs</span>
   </div>
 </div>
 
@@ -166,8 +189,6 @@ function toggleRevealAll(btn){var els=document.querySelectorAll('#ip,#ws-url');v
 function copyAll(){var token=document.getElementById('token').textContent;var ip=document.getElementById('ip').textContent;var port=document.getElementById('port').textContent;navigator.clipboard.writeText('Host: '+ip+'\nPort: '+port+'\nToken: '+token).then(()=>{var b=document.getElementById('copy-all-btn');b.textContent='✅ Copied!';setTimeout(()=>b.textContent='📋 Copy All Settings',2000)})}
 function sendMsg(){var input=document.getElementById('msg-input');var text=input.value.trim();if(!text)return;var status=document.getElementById('msg-status');status.textContent='Sending...';status.style.color='#E87B35';fetch('/message',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},body:JSON.stringify({text:text,source:'mac'})}).then(r=>r.json()).then(d=>{if(d.ok){var c=d.clients||0;status.textContent=c>0?'✅ Delivered to '+c+' client'+(c>1?'s':''):'⚠️ Sent but no clients connected';status.style.color=c>0?'#4ade80':'#facc15';input.value='';loadActivity()}else{status.textContent='❌ Failed';status.style.color='#f87171'}}).catch(e=>{status.textContent='❌ '+e.message;status.style.color='#f87171'});setTimeout(()=>{status.textContent=''},5000)}
 
-function loadActivity(){fetch('/activity',{headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>r.json()).then(d=>{var el=document.getElementById('activity-log');if(!d.activity||!d.activity.length){el.innerHTML='<div style="color:#444;text-align:center;padding:12px;">No activity yet</div>';return}el.innerHTML=d.activity.map(a=>{var dir=a.direction==='in'?'<span style="color:#4ade80">◂ IN</span>':'<span style="color:#E87B35">▸ OUT</span>';var time=new Date(a.ts).toLocaleTimeString();return '<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #1a1a1a"><span style="color:#444;min-width:70px">'+time+'</span>'+dir+'<span style="color:#666;min-width:50px">'+a.source+'</span><span style="color:#c0c0c0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+a.text+'</span></div>'}).join('')}).catch(()=>{})}
-loadActivity();setInterval(loadActivity,5000);
 
 function sendSMS(phone,message,statusEl){
   var s=document.getElementById(statusEl);
@@ -192,6 +213,6 @@ function sendCustomSMS(){
   if(!msg){document.getElementById('sms-status').textContent='Enter a message';document.getElementById('sms-status').style.color='#f87171';return}
   sendSMS(phone,msg,'sms-status');document.getElementById('sms-custom').value=''
 }
-function saveElevenKey(){var key=document.getElementById('eleven-key').value.trim();var status=document.getElementById('eleven-status');if(!key){status.textContent='Enter a key first';status.style.color='#f87171';return}fetch('/config/tts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},body:JSON.stringify({key:key})}).then(r=>r.json()).then(d=>{if(d.ok){status.textContent='✅ Key saved! Restart channel to apply.';status.style.color='#4ade80';document.getElementById('tts-status').innerHTML='<span class="dot dot-green"></span>ElevenLabs (restart to apply)'}else{status.textContent='❌ '+(d.error||'Failed');status.style.color='#f87171'}}).catch(e=>{status.textContent='❌ '+e.message;status.style.color='#f87171'})}
+function saveElevenKey(){var key=document.getElementById('eleven-key').value.trim();var status=document.getElementById('eleven-status');if(!key){status.textContent='Enter a key first';status.style.color='#f87171';return}fetch('/config/tts',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},body:JSON.stringify({key:key})}).then(r=>r.json()).then(d=>{if(d.ok){status.textContent='✅ Key saved & applied! TTS is now active.';status.style.color='#4ade80';document.getElementById('tts-status').innerHTML='<span class="dot dot-green"></span>ElevenLabs';document.getElementById('eleven-key').value=''}else{status.textContent='❌ '+(d.error||'Failed');status.style.color='#f87171'}}).catch(e=>{status.textContent='❌ '+e.message;status.style.color='#f87171'})}
 </script>
 </body></html>
