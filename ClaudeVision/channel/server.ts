@@ -89,6 +89,14 @@ type WireOut =
 const clients = new Set<ServerWebSocket<unknown>>()
 let seq = 0
 
+// Activity log (last 50 messages)
+type ActivityEntry = { ts: string; direction: 'in' | 'out'; source: string; text: string; hasImage?: boolean }
+const activityLog: ActivityEntry[] = []
+function logActivity(entry: ActivityEntry) {
+  activityLog.unshift(entry)
+  if (activityLog.length > 50) activityLog.length = 50
+}
+
 function nextId() { return `vc${Date.now()}-${++seq}` }
 
 function broadcast(m: WireOut) {
@@ -215,6 +223,7 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
 
         const audioUrl = await audioPromise
         broadcast({ type: 'reply', id, text, audio_url: audioUrl })
+        logActivity({ ts: new Date().toISOString(), direction: 'out', source: 'claude', text: text.slice(0, 100) })
         log(`→ reply: ${text.slice(0, 80)}${text.length > 80 ? '...' : ''}`)
 
         return { content: [{ type: 'text', text: `sent ${id}${audioUrl ? ' (with audio)' : ''}` }] }
@@ -370,9 +379,17 @@ Bun.serve({
         const body = await req.json() as { text?: string; source?: string; id?: string }
         const id = body.id ?? nextId()
         const source = (body.source ?? 'iphone') as 'iphone' | 'rayban'
-        deliver(id, body.text ?? '', source)
-        return Response.json({ ok: true, id })
+        const text = body.text ?? ''
+        deliver(id, text, source)
+        logActivity({ ts: new Date().toISOString(), direction: 'in', source, text: text.slice(0, 100) })
+        return Response.json({ ok: true, id, delivered_to: clients.size, clients: clients.size })
       })()
+    }
+
+    // ── Activity log ─────────────────────────────────────────────────────
+    if (url.pathname === '/activity') {
+      if (!checkAuth(req)) return unauthorized()
+      return Response.json({ activity: activityLog })
     }
 
     // ── CORS preflight ──────────────────────────────────────────────────

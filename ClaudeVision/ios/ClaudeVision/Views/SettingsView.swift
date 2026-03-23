@@ -117,7 +117,10 @@ struct SettingsView: View {
                 settingIcon("number", color: .blue)
                 Text("Port")
                 Spacer()
-                TextField("18790", value: $config.gatewayPort, format: .number)
+                TextField("18790", text: Binding(
+                    get: { String(config.gatewayPort) },
+                    set: { config.gatewayPort = Int($0) ?? 18790 }
+                ))
                     .multilineTextAlignment(.trailing)
                     .keyboardType(.numberPad)
                     .foregroundStyle(.secondary)
