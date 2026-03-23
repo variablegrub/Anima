@@ -104,6 +104,9 @@ struct ContentView: View {
                 onConnectGlasses: { Task { await viewModel.connectGlasses() } }
             )
         }
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
         .animation(.easeInOut(duration: 0.25), value: viewModel.transcript.count)
         .animation(.easeInOut(duration: 0.2), value: viewModel.state)
         .animation(.easeInOut(duration: 0.2), value: viewModel.errorMessage != nil)
