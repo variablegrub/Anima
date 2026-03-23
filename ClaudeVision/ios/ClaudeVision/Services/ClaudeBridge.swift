@@ -45,12 +45,16 @@ class ClaudeBridge: NSObject, ObservableObject, URLSessionWebSocketDelegate {
         isManualDisconnect = false
         reconnectAttempts = 0
 
-        let wsURL = URL(string: "ws://\(config.gatewayHost):\(config.gatewayPort)/ws")!
+        let wsURL = config.wsURL
         print("[Bridge] Connecting WebSocket to \(wsURL)")
 
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: .main)
         self.urlSession = session
-        let task = session.webSocketTask(with: wsURL)
+        var request = URLRequest(url: wsURL)
+        if !config.channelToken.isEmpty {
+            request.setValue("Bearer \(config.channelToken)", forHTTPHeaderField: "Authorization")
+        }
+        let task = session.webSocketTask(with: request)
         self.webSocket = task
         task.resume()
         receiveMessage()
@@ -169,6 +173,9 @@ class ClaudeBridge: NSObject, ObservableObject, URLSessionWebSocketDelegate {
         let url = URL(string: "http://\(config.gatewayHost):\(config.gatewayPort)/upload")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        if !config.channelToken.isEmpty {
+            request.setValue("Bearer \(config.channelToken)", forHTTPHeaderField: "Authorization")
+        }
 
         let boundary = "VisionClaude-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
