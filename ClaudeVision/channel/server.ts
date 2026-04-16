@@ -271,7 +271,17 @@ async function deliver(
     },
   })
   log(`← ${source}: ${text.slice(0, 60)}${image ? ` [+image: ${image.name}]` : ""}`)
-  
+
+  // Guard: only call Claude when there is actual voice text
+  const userSpeech = (() => {
+    const marker = text.indexOf('\n\nUser: ')
+    return marker !== -1 ? text.slice(marker + 8) : text
+  })()
+  if (!userSpeech.trim()) {
+    log('[skip] no voice text')
+    return
+  }
+
   // Direct API call
   try {
     const { callClaude } = await import("./direct-api.ts")
