@@ -1,4 +1,8 @@
 // Direct Anthropic API call - bypasses Claude Code channel
+import { mkdirSync, writeFileSync } from 'fs'
+import { homedir } from 'os'
+import { join } from 'path'
+
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? ''
 
 const MAX_HISTORY = 15
@@ -6,13 +10,43 @@ const FULL_IMAGE_EXCHANGES = 3
 
 type MessageContent = { type: string; [key: string]: any }[]
 type Exchange = { user: MessageContent; assistant: string }
+type SessionEntry = {
+  id: number
+  timestamp: string
+  type: 'sketch_capture' | 'feedback_pair' | 'decision' | 'rejection' | 'observation' | 'general'
+  userText: string
+  assistantReply: string
+  hadImage: boolean
+  sessionSummary: string
+}
 
 const history: Exchange[] = []
 let sessionSummary = ''
 
+const SESSION_DIR = process.env.ANIMA_SESSION_DIR ?? join(homedir(), '.anima', 'sessions')
+let entryCounter = 0
+const sessionLog: SessionEntry[] = []
+
+export function getSessionLog(): SessionEntry[] {
+  return sessionLog
+}
+
+export function saveSession(): void {
+  if (sessionLog.length === 0) return
+  mkdirSync(SESSION_DIR, { recursive: true })
+  const now = new Date()
+  const ts = now.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15)
+  const filename = `session-${ts}.json`
+  writeFileSync(join(SESSION_DIR, filename), JSON.stringify(sessionLog, null, 2))
+  console.log(`[session] saved ${sessionLog.length} entries → ${filename}`)
+}
+
 export function clearHistory(): void {
+  saveSession()
   history.length = 0
   sessionSummary = ''
+  sessionLog.length = 0
+  entryCounter = 0
 }
 
 function stripModePrefix(text: string): string {
@@ -118,6 +152,16 @@ export async function callClaude(text: string, imagePath?: string): Promise<stri
   history.push({ user: content, assistant: reply })
   if (history.length > MAX_HISTORY) history.shift()
   updateSessionSummary(reply)
+
+  sessionLog.push({
+    id: ++entryCounter,
+    timestamp: new Date().toISOString(),
+    type: 'general',
+    userText,
+    assistantReply: reply,
+    hadImage: !!imagePath,
+    sessionSummary,
+  })
 
   return reply
 }
