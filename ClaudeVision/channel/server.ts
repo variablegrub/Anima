@@ -25,6 +25,7 @@ import { readFileSync, writeFileSync, mkdirSync, statSync, copyFileSync, existsS
 import { homedir, networkInterfaces } from 'os'
 import { join, extname, basename } from 'path'
 import type { ServerWebSocket } from 'bun'
+import { saveSession } from './direct-api.ts'
 
 // ── Config ──────────────────────────────────────────────────────────────────
 const PORT = Number(process.env.VISIONCLAUDE_PORT ?? 18790)
@@ -555,6 +556,19 @@ log(``)
 log(`   🔐 Channel Token: ${CHANNEL_TOKEN}`)
 log(`   Dashboard:  http://localhost:${PORT}`)
 log(`   Enter token in iOS app → Settings → Channel Token`)
+
+// Save session log on graceful shutdown
+process.on('SIGINT', () => {
+  log('SIGINT received — saving session...')
+  saveSession()
+  process.exit(0)
+})
+
+process.on('SIGTERM', () => {
+  log('SIGTERM received — saving session...')
+  saveSession()
+  process.exit(0)
+})
 
 // Auto-open dashboard in default browser
 Bun.spawn(['open', `http://localhost:${PORT}`], { stdout: 'ignore', stderr: 'ignore' })
