@@ -249,43 +249,27 @@ mcp.setRequestHandler(CallToolRequestSchema, async req => {
 await mcp.connect(new StdioServerTransport())
 
 // ── Deliver messages from iOS to Claude ─────────────────────────────────────
-async function deliver(
+function deliver(
   id: string,
   text: string,
-  source: "iphone" | "rayban",
+  source: 'iphone' | 'rayban',
   image?: { path: string; name: string }
-): Promise<void> {
-  // Also send MCP notification (in case channels work)
+): void {
   void mcp.notification({
-    method: "notifications/claude/channel",
+    method: 'notifications/claude/channel',
     params: {
-      content: text || (image ? `(image from ${source})` : "(empty)"),
+      content: text || (image ? `(image from ${source})` : '(empty)'),
       meta: {
         chat_id: source,
         message_id: id,
-        user: "phone",
+        user: 'phone',
         source,
         ts: new Date().toISOString(),
         ...(image ? { file_path: image.path } : {}),
       },
     },
   })
-  log(`← ${source}: ${text.slice(0, 60)}${image ? ` [+image: ${image.name}]` : ""}`)
-  
-  // Direct API call
-  try {
-    const { callClaude } = await import("./direct-api.ts")
-    broadcast({ type: "status", status: "thinking" })
-    const reply = await callClaude(text, image?.path)
-    const audioUrl = await generateTTS(reply)
-    const replyId = nextId()
-    broadcast({ type: "reply", id: replyId, text: reply, audio_url: audioUrl })
-    logActivity({ ts: new Date().toISOString(), direction: "out", source: "claude", text: reply.slice(0, 100) })
-    log(`→ reply: ${reply.slice(0, 80)}${reply.length > 80 ? "..." : ""}`)
-  } catch (e) {
-    log(`API error: ${e}`)
-    broadcast({ type: "reply", id: nextId(), text: `Error: ${e}` })
-  }
+  log(`← ${source}: ${text.slice(0, 60)}${image ? ` [+image: ${image.name}]` : ''}`)
 }
 
 // ── HTTP + WebSocket Server ─────────────────────────────────────────────────

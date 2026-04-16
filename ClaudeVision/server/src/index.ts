@@ -75,7 +75,7 @@ async function main() {
 
   // ── Security middleware ──
   app.use(gatewayAuth());    // Optional API key auth (set GATEWAY_API_KEY in .env)
-  app.use(rateLimiter(30));  // 30 requests per minute per IP
+  app.use(rateLimiter(300));  // 30 requests per minute per IP
 
   // ── Routes ──
   app.use("/chat", createChatRouter(claudeClient, conversations, requestQueue));
