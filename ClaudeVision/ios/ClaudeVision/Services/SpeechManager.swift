@@ -143,7 +143,7 @@ class SpeechManager: NSObject, ObservableObject {
 
     // Pause detection
     private var silenceTimer: Timer?
-    private var pauseThreshold: TimeInterval = 2.5
+    private var pauseThreshold: TimeInterval = 3.5
     var onSpeechPause: ((String) -> Void)?
     var onSpeechFinished: (() -> Void)?
 
