@@ -23,7 +23,7 @@ type SessionEntry = {
 const history: Exchange[] = []
 let sessionSummary = ''
 
-const SESSION_DIR = process.env.ANIMA_SESSION_DIR ?? join(homedir(), '.anima', 'sessions')
+const SESSION_DIR = process.env.ANIMA_SESSION_DIR ?? join(homedir(), 'Desktop', 'Design AI', 'Anima Sessions')
 let entryCounter = 0
 const sessionLog: SessionEntry[] = []
 
